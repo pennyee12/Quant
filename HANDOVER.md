@@ -4,6 +4,69 @@ Last updated: 2026-05-01. Written for Codex / Claude to continue development.
 
 ---
 
+## Latest Operational Update — GitHub Paper Trading
+
+GitHub paper trading is now running and verified.
+
+- Workflow: `.github/workflows/paper-trade.yml`
+- Dashboard: `https://pennyee12.github.io/Quant/`
+- Current paper state is committed in `paper_state.json`
+- Dashboard data is committed in `docs/data.json`
+- Latest dashboard code is in `docs/index.html`
+
+Important behavior:
+
+- Normal scheduled paper trading runs after market close.
+- A signal is computed from the completed daily close.
+- The resulting order is saved as `PendingOrderUSD`.
+- Pending orders normally fill on the next valid run using the next trading day's **open** price.
+- The program does not predict the next open; it waits for Yahoo's completed daily bar, then reads the actual `open`.
+
+Manual bootstrap on 2026-05-01:
+
+- The first GitHub run produced pending buy orders.
+- User wanted the paper portfolio to start holding shares immediately.
+- Added `-fill-pending-at-close` to `cmd/paper`.
+- Ran it once manually to fill existing pending orders at 2026-05-01 close.
+- This is a paper-trading bootstrap mode only; the scheduled workflow still uses normal next-open fills.
+
+Current filled paper buys from 2026-05-01:
+
+| Symbol | Approx Filled USD | Fill Price Source |
+|--------|-------------------|-------------------|
+| RIOT | $4,924 | 2026-05-01 close |
+| MARA | $1,365 | 2026-05-01 close |
+| TSLA | $5,098 | 2026-05-01 close |
+| CLSK | $5,501 | 2026-05-01 close |
+| TSLL | $3,689 | 2026-05-01 close |
+| SOXX | $5,346 | 2026-05-01 close |
+| LABU | $5,808 | 2026-05-01 close |
+
+No buy was made for SOXL, TQQQ, or MSTR because the strategy did not issue buy orders for them.
+
+Dashboard improvements:
+
+- Position cards now show shares owned, position value, cash, pending order, ROI, max drawdown, trades, and last price.
+- Summary table now shows shares, cash, equity, ROI, pending order, max drawdown, trades, and days.
+- Recent activity now shows buy/sell amount, fill price, approximate fill shares, and fill time/mode.
+- `paper.DailyRecord` now has `fill_price`, `fill_time`, and `fill_mode`.
+
+Duplicate-run fix:
+
+- The workflow has two cron entries to cover EST and EDT.
+- Both fired on 2026-05-01, causing an accidental duplicate same-day paper run.
+- The duplicate state was corrected back to the clean one-trade state.
+- `cmd/paper` now skips duplicate scheduled runs if the same date already has records for all paper tickers.
+- Manual `-fill-pending-at-close` runs bypass this duplicate guard intentionally.
+
+Small immediate losses:
+
+- Some just-filled positions show a few dollars negative immediately.
+- This is expected: the simulator applies slippage, fees/cost model, and ETF expense drag where applicable.
+- It is not necessarily post-fill market movement.
+
+---
+
 ## What This Project Is
 
 A local-first quantitative paper trading system that:
@@ -88,10 +151,22 @@ config.yaml           — All settings; 30 tickers total (24 original + 6 levera
 
 This matches the backtest exactly: signal on bar[i] close → fill at bar[i+1] open.
 
+Exception: `cmd/paper -fill-pending-at-close` exists only for manual paper-trading
+bootstrap/testing. It fills already-pending orders at the current daily close, then
+continues to compute the next pending order. Do not enable this in the scheduled
+GitHub workflow.
+
 **After all tickers:**
 - Saves `paper_state.json`
 - Writes `docs/data.json` for the dashboard
 - GitHub Actions commits both files back to the repo
+
+Duplicate scheduled run protection:
+
+- Because the workflow includes both EST and EDT cron entries, `cmd/paper` checks
+  whether the current date already has records for all paper tickers.
+- If yes, and not in manual close-fill mode, it skips the duplicate run and only
+  refreshes dashboard JSON.
 
 ---
 
@@ -158,6 +233,9 @@ Avoid (negative alpha): XLK, XME, IBIT, FBTC, ARKB, TSLA, RIOT, NVDL
 - Dashboard: https://pennyee12.github.io/Quant/
 - Actions run at: 4:05 PM ET weekdays (21:05 UTC / 20:05 UTC depending on DST)
 - No secrets required — Yahoo Finance needs no API key
+- Manual trigger is no longer required for normal operation.
+- Next expected scheduled run after the initial 2026-05-01 setup: Monday,
+  2026-05-04 around 4:05 PM ET.
 
 GitHub Pages config: Settings → Pages → Branch: main → Folder: /docs
 
