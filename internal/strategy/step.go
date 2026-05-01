@@ -3,7 +3,7 @@ package strategy
 import (
 	"math"
 
-	"quantsaas-local/internal/quant"
+	"github.com/pennyee12/Quant/internal/quant"
 )
 
 // Step is the pure strategy entrypoint shared by backtest and future paper/live

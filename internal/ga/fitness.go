@@ -3,9 +3,9 @@ package ga
 import (
 	"math"
 
-	"quantsaas-local/internal/backtest"
-	"quantsaas-local/internal/genome"
-	"quantsaas-local/internal/quant"
+	"github.com/pennyee12/Quant/internal/backtest"
+	"github.com/pennyee12/Quant/internal/genome"
+	"github.com/pennyee12/Quant/internal/quant"
 )
 
 const (

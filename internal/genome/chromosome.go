@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"quantsaas-local/internal/quant"
+	"github.com/pennyee12/Quant/internal/quant"
 )
 
 // Chromosome holds the 20 evolvable genes for the Sigmoid dynamic-balance strategy.

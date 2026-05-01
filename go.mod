@@ -1,4 +1,4 @@
-module quantsaas-local
+module github.com/pennyee12/Quant
 
 go 1.26.2
 

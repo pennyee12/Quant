@@ -6,7 +6,7 @@ import (
 	"sort"
 	"sync"
 
-	"quantsaas-local/internal/genome"
+	"github.com/pennyee12/Quant/internal/genome"
 )
 
 // Config controls the GA evolution loop.

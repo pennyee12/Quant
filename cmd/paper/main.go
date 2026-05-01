@@ -21,13 +21,13 @@ import (
 	"path/filepath"
 	"time"
 
-	"quantsaas-local/internal/backtest"
-	"quantsaas-local/internal/config"
-	"quantsaas-local/internal/genome"
-	"quantsaas-local/internal/paper"
-	"quantsaas-local/internal/quant"
-	"quantsaas-local/internal/strategy"
-	"quantsaas-local/internal/yahoo"
+	"github.com/pennyee12/Quant/internal/backtest"
+	"github.com/pennyee12/Quant/internal/config"
+	"github.com/pennyee12/Quant/internal/genome"
+	"github.com/pennyee12/Quant/internal/paper"
+	"github.com/pennyee12/Quant/internal/quant"
+	"github.com/pennyee12/Quant/internal/strategy"
+	"github.com/pennyee12/Quant/internal/yahoo"
 )
 
 // Top-10 tickers for paper trading (profit-priority selection).

@@ -3,7 +3,7 @@ package backtest
 import (
 	"time"
 
-	"quantsaas-local/internal/quant"
+	"github.com/pennyee12/Quant/internal/quant"
 )
 
 type GhostDCAResult struct {

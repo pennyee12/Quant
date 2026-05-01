@@ -4,8 +4,8 @@ import (
 	"math"
 	"time"
 
-	"quantsaas-local/internal/quant"
-	"quantsaas-local/internal/strategy"
+	"github.com/pennyee12/Quant/internal/quant"
+	"github.com/pennyee12/Quant/internal/strategy"
 )
 
 type Result struct {

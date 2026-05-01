@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"quantsaas-local/internal/quant"
+	"github.com/pennyee12/Quant/internal/quant"
 )
 
 const userAgent = "Mozilla/5.0 (compatible; quant-paper-trader/1.0)"
