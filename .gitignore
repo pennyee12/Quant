@@ -7,6 +7,11 @@ data/bars/
 # local Schwab credentials — never commit
 *.token.json
 
+# local API credentials — never commit
+.env
+.env.*
+!.env.example
+
 # build artifacts
 /quant
 
