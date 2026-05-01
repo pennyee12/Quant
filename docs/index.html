@@ -24,6 +24,10 @@
     section h2 { font-size: 1rem; font-weight: 600; color: #f0f6fc; margin-bottom: 12px; }
     #chart-area { margin-bottom: 32px; }
     canvas { width: 100% !important; }
+    .totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 28px; }
+    .total-box { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 14px; }
+    .total-label { color: #8b949e; font-size: 0.78rem; margin-bottom: 6px; }
+    .total-value { color: #f0f6fc; font-size: 1.35rem; font-weight: 700; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 32px; }
     .card { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 16px; }
     .card-symbol { font-size: 1rem; font-weight: 700; color: #f0f6fc; margin-bottom: 4px; }
@@ -40,6 +44,11 @@
   <p class="updated" id="updated">Loading…</p>
 
   <section>
+    <h2>Portfolio Total</h2>
+    <div class="totals" id="portfolio-totals"></div>
+  </section>
+
+  <section>
     <h2>Positions</h2>
     <div class="grid" id="cards"></div>
   </section>
@@ -51,13 +60,13 @@
         <tr>
           <th>Ticker</th>
           <th>Shares</th>
-          <th>Cash</th>
-          <th>Equity</th>
+          <th>Stock Value</th>
+          <th>Cash Left</th>
+          <th>Pending Next Open</th>
+          <th>Total Now</th>
           <th>ROI</th>
-          <th>Pending</th>
           <th>Max DD</th>
           <th>Trades</th>
-          <th>Days</th>
         </tr>
       </thead>
       <tbody id="summary-body"></tbody>
@@ -108,22 +117,48 @@
       .then(r => r.ok ? r.json() : Promise.reject('data.json not found — run first paper trading step'))
       .then(data => {
         document.getElementById('updated').textContent = 'Last updated: ' + (data.updated_at || '—');
+        const positions = data.positions || [];
+
+        const totals = positions.reduce((acc, p) => {
+          const stockValue = (p.shares || 0) * (p.last_price || 0);
+          const pending = p.pending_order_usd || 0;
+          acc.stockValue += stockValue;
+          acc.cash += p.cash || 0;
+          acc.equity += p.equity || 0;
+          if (pending > 0) acc.pendingBuy += pending;
+          if (pending < 0) acc.pendingSell += Math.abs(pending);
+          acc.initial += p.initial_capital || 0;
+          return acc;
+        }, { stockValue: 0, cash: 0, equity: 0, pendingBuy: 0, pendingSell: 0, initial: 0 });
+
+        const totalROI = totals.initial > 0 ? totals.equity / totals.initial - 1 : 0;
+        document.getElementById('portfolio-totals').innerHTML = `
+          <div class="total-box"><div class="total-label">Money currently in stocks</div><div class="total-value">${money(totals.stockValue)}</div></div>
+          <div class="total-box"><div class="total-label">Cash left</div><div class="total-value">${money(totals.cash)}</div></div>
+          <div class="total-box"><div class="total-label">Pending buys next open</div><div class="total-value">${money(totals.pendingBuy)}</div></div>
+          <div class="total-box"><div class="total-label">Pending sells next open</div><div class="total-value">${money(totals.pendingSell)}</div></div>
+          <div class="total-box"><div class="total-label">Total now: stocks + cash</div><div class="total-value">${money(totals.equity)}</div></div>
+          <div class="total-box"><div class="total-label">Total P/L</div><div class="total-value ${totalROI>0?'pos':totalROI<0?'neg':'neu'}">${money(totals.equity - totals.initial)} (${totalROI>0?'+':''}${(totalROI*100).toFixed(2)}%)</div></div>
+        `;
 
         // Cards
         const cards = document.getElementById('cards');
-        if (!data.positions || data.positions.length === 0) {
+        if (positions.length === 0) {
           cards.innerHTML = '<p class="empty">No positions yet.</p>';
         } else {
-          cards.innerHTML = data.positions.map((p, i) => {
+          cards.innerHTML = positions.map((p, i) => {
             const lev = LEVERAGED.has(p.symbol) ? '<span class="badge badge-lev">leveraged</span> ' : '';
             const roiClass = p.roi > 0 ? 'pos' : p.roi < 0 ? 'neg' : 'neu';
+            const stockValue = (p.shares || 0) * (p.last_price || 0);
+            const pending = p.pending_order_usd || 0;
             return `<div class="card">
               <div class="card-symbol">${lev}${p.symbol}</div>
               <div class="card-equity ${roiClass}">${money(p.equity)}</div>
               <div class="card-row"><span>Shares owned</span><span>${fmt(p.shares, 4)}</span></div>
-              <div class="card-row"><span>Position value</span><span>${money((p.shares || 0) * (p.last_price || 0))}</span></div>
-              <div class="card-row"><span>Cash</span><span>${money(p.cash)}</span></div>
-              <div class="card-row"><span>Pending</span><span>${p.pending_order_usd===0?'—':(p.pending_order_usd>0?'+':'')+money(p.pending_order_usd)}</span></div>
+              <div class="card-row"><span>Money in stock</span><span>${money(stockValue)}</span></div>
+              <div class="card-row"><span>Cash left</span><span>${money(p.cash)}</span></div>
+              <div class="card-row"><span>Pending next open</span><span>${pending===0?'—':(pending>0?'Buy ':'Sell ')+money(Math.abs(pending))}</span></div>
+              <div class="card-row"><span>Total now</span><span>${money(p.equity)}</span></div>
               <div class="card-row"><span>ROI</span><span class="${roiClass}">${p.roi>0?'+':''}${(p.roi*100).toFixed(1)}%</span></div>
               <div class="card-row"><span>Max DD</span><span class="neg">${(p.max_drawdown*100).toFixed(1)}%</span></div>
               <div class="card-row"><span>Trades</span><span>${p.trade_count}</span></div>
@@ -134,20 +169,22 @@
 
         // Summary table
         const tbody = document.getElementById('summary-body');
-        const positionsBySymbol = Object.fromEntries((data.positions || []).map(p => [p.symbol, p]));
+        const positionsBySymbol = Object.fromEntries(positions.map(p => [p.symbol, p]));
         const sorted = [...(data.summary || [])].sort((a,b) => b.roi - a.roi);
         tbody.innerHTML = sorted.map(s => {
           const p = positionsBySymbol[s.symbol] || {};
+          const stockValue = (p.shares || 0) * (p.last_price || 0);
+          const pending = p.pending_order_usd || 0;
           return `<tr>
           <td>${LEVERAGED.has(s.symbol)?'<span class="badge badge-lev">3x</span> ':''}${s.symbol}</td>
           <td>${fmt(p.shares || 0, 4)}</td>
+          <td>${money(stockValue)}</td>
           <td>${money(p.cash || 0)}</td>
+          <td>${pending===0?'—':(pending>0?'Buy ':'Sell ')+money(Math.abs(pending))}</td>
           <td>${money(s.equity)}</td>
           <td>${pct(s.roi)}</td>
-          <td>${(p.pending_order_usd || 0)===0?'—':((p.pending_order_usd || 0)>0?'+':'')+money(p.pending_order_usd)}</td>
           <td><span class="neg">${(s.max_dd*100).toFixed(1)}%</span></td>
           <td>${s.trade_count}</td>
-          <td>${s.days_since}</td>
         </tr>`;
         }).join('');
 
