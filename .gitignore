@@ -8,7 +8,7 @@ data/bars/
 *.token.json
 
 # build artifacts
-quant
+/quant
 
 # local claude context
 .claude/
