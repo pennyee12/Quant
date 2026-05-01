@@ -38,9 +38,10 @@ var paperTickers = []string{
 
 func main() {
 	configPath := flag.String("config", "config.yaml", "config file")
-	statePath  := flag.String("state", "paper_state.json", "paper trading state file")
-	outPath    := flag.String("out", "docs/data.json", "output JSON for dashboard")
-	warmup     := flag.Int("warmup", 200, "warmup bars for indicator seeding")
+	statePath := flag.String("state", "paper_state.json", "paper trading state file")
+	outPath := flag.String("out", "docs/data.json", "output JSON for dashboard")
+	warmup := flag.Int("warmup", 200, "warmup bars for indicator seeding")
+	fillPendingAtClose := flag.Bool("fill-pending-at-close", false, "fill existing pending orders at today's close instead of today's open; intended for manual paper-trading bootstrap only")
 	flag.Parse()
 
 	cfg, err := config.Load(*configPath)
@@ -53,7 +54,7 @@ func main() {
 		log.Fatalf("state load: %v", err)
 	}
 
-	now   := time.Now().UTC()
+	now := time.Now().UTC()
 	today := now.Format("2006-01-02")
 
 	// Fetch enough calendar days to cover warmup bars + weekends/holidays
@@ -68,8 +69,8 @@ func main() {
 	fmt.Printf("Paper trading run — %s — %d tickers\n\n", today, len(paperTickers))
 
 	for _, symbol := range paperTickers {
-		params        := loadParams(symbol, cfg)
-		expenseRatio  := expenseRatioFor(symbol, cfg)
+		params := loadParams(symbol, cfg)
+		expenseRatio := expenseRatioFor(symbol, cfg)
 		runCfg.ExpenseRatio = expenseRatio
 
 		bars, err := yahoo.FetchDaily(symbol, fetchStart, now)
@@ -82,38 +83,19 @@ func main() {
 			continue
 		}
 
-		pos      := state.FindPosition(symbol, cfg.Backtest.InitialCapital)
+		pos := state.FindPosition(symbol, cfg.Backtest.InitialCapital)
 		todayBar := bars[len(bars)-1]
 		filledUSD := 0.0
 
-		// ── Phase 1: fill yesterday's pending order at today's open ──────────
-		if pos.PendingOrderUSD != 0 && todayBar.Open > 0 {
-			fillPrice := todayBar.Open
-			if pos.PendingOrderUSD > 0 {
-				spend := math.Min(pos.PendingOrderUSD, pos.Cash)
-				if spend >= params.MinTradeUSD {
-					fill    := fillPrice * (1 + runCfg.SlippageBPS/10000.0)
-					fee     := spend * runCfg.FeeBPS / 10000.0
-					netSpend := math.Min(spend, math.Max(0, pos.Cash-fee))
-					pos.Shares += netSpend / fill
-					pos.Cash   -= netSpend + fee
-					pos.TradeCount++
-					pos.BarsSinceTrade = 0
-					filledUSD = spend
-				}
-			} else {
-				wantSell := math.Min(-pos.PendingOrderUSD/fillPrice, pos.Shares)
-				if wantSell*fillPrice >= params.MinTradeUSD {
-					fill  := fillPrice * (1 - runCfg.SlippageBPS/10000.0)
-					gross := wantSell * fill
-					fee   := gross * runCfg.FeeBPS / 10000.0
-					pos.Shares -= wantSell
-					pos.Cash   += gross - fee
-					pos.TradeCount++
-					pos.BarsSinceTrade = 0
-					filledUSD = -wantSell * fillPrice
-				}
-			}
+		// Phase 1: fill the pending order. Normal mode fills at today's open.
+		// Manual bootstrap mode fills at today's close so paper trading can
+		// start positions immediately after the first signal run.
+		fillPrice := todayBar.Open
+		if *fillPendingAtClose {
+			fillPrice = todayBar.Close
+		}
+		if pos.PendingOrderUSD != 0 && fillPrice > 0 {
+			filledUSD = fillPendingOrder(pos, params, runCfg, fillPrice)
 			pos.PendingOrderUSD = 0
 		}
 
@@ -125,7 +107,7 @@ func main() {
 			pos.BarsSinceTrade++
 		}
 
-		// ── Phase 2: compute signal on today's close, store pending order ─────
+		// Phase 2: compute signal on today's close, store pending order.
 		closes := make([]float64, 0, len(bars))
 		for _, b := range bars {
 			if b.Close > 0 {
@@ -189,6 +171,36 @@ func main() {
 	}
 
 	fmt.Printf("\nState saved → %s\nDashboard  → %s\n", *statePath, *outPath)
+}
+
+func fillPendingOrder(pos *paper.Position, params quant.StrategyParams, runCfg backtest.RunConfig, fillPrice float64) float64 {
+	if pos.PendingOrderUSD > 0 {
+		spend := math.Min(pos.PendingOrderUSD, pos.Cash)
+		if spend < params.MinTradeUSD {
+			return 0
+		}
+		fill := fillPrice * (1 + runCfg.SlippageBPS/10000.0)
+		fee := spend * runCfg.FeeBPS / 10000.0
+		netSpend := math.Min(spend, math.Max(0, pos.Cash-fee))
+		pos.Shares += netSpend / fill
+		pos.Cash -= netSpend + fee
+		pos.TradeCount++
+		pos.BarsSinceTrade = 0
+		return spend
+	}
+
+	wantSell := math.Min(-pos.PendingOrderUSD/fillPrice, pos.Shares)
+	if wantSell*fillPrice < params.MinTradeUSD {
+		return 0
+	}
+	fill := fillPrice * (1 - runCfg.SlippageBPS/10000.0)
+	gross := wantSell * fill
+	fee := gross * runCfg.FeeBPS / 10000.0
+	pos.Shares -= wantSell
+	pos.Cash += gross - fee
+	pos.TradeCount++
+	pos.BarsSinceTrade = 0
+	return -wantSell * fillPrice
 }
 
 func loadParams(symbol string, cfg *config.Config) quant.StrategyParams {
