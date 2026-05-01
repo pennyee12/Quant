@@ -1,0 +1,138 @@
+schwab:
+  token_file: "/Users/yip/Library/CloudStorage/Dropbox/Stock trading/data/token.json"
+  api_base_url: "https://api.schwabapi.com"
+  token_url: "https://api.schwabapi.com/v1/oauth/token"
+  credential_script: "/Users/yip/Projects/Stock Analysis 2/scripts/run_schwab_keepalive.sh"
+
+backtest:
+  initial_capital: 10000
+  monthly_inject: 0
+  fee_bps: 1
+  slippage_bps: 5
+  period_type: "year"
+  period: 20
+  frequency_type: "daily"
+  frequency: 1
+  start_date: "2016-01-01"
+  end_date: ""
+  fill_model: "next_open"
+  cache_dir: "data/bars"
+
+strategy:
+  ema_bars: 21
+  stddev_bars: 21
+  momentum_bars: 10
+  mean_reversion_weight: 0.70
+  momentum_weight: 0.30
+  beta: 1.35
+  gamma: 0.70
+  sigma_floor: 0.005
+  min_trade_usd: 10.10
+  target_deadband_weight: 0.08
+  max_position_weight: 0.95
+  max_trade_pct_equity: 0.25
+  rebalance_cooldown_bars: 5
+  urgent_rebalance_weight: 0.20
+
+tickers:
+  - symbol: RIOT
+    type: "Bitcoin miner stock"
+    expense_ratio: 0
+  - symbol: MSTR
+    type: "Bitcoin treasury stock"
+    expense_ratio: 0
+  - symbol: MARA
+    type: "Bitcoin miner stock"
+    expense_ratio: 0
+  - symbol: CLSK
+    type: "Bitcoin miner stock"
+    expense_ratio: 0
+  - symbol: XOP
+    type: "Oil & gas exploration ETF"
+    expense_ratio: 0.0035
+  - symbol: BTC
+    type: "Bitcoin baseline"
+    expense_ratio: 0
+    enabled: false
+    note: "Schwab equities API does not provide spot BTC bars; disabled for now."
+  - symbol: COIN
+    type: "Crypto exchange stock"
+    expense_ratio: 0
+  - symbol: WGMI
+    type: "Bitcoin miner ETF"
+    expense_ratio: 0.0075
+  - symbol: GDXJ
+    type: "Junior gold miners ETF"
+    expense_ratio: 0.0052
+  - symbol: ARKG
+    type: "Genomics ETF"
+    expense_ratio: 0.0075
+  - symbol: URA
+    type: "Uranium ETF"
+    expense_ratio: 0.0069
+  - symbol: IBIT
+    type: "Spot Bitcoin ETF"
+    expense_ratio: 0.0025
+  - symbol: FBTC
+    type: "Spot Bitcoin ETF"
+    expense_ratio: 0.0025
+  - symbol: BITB
+    type: "Spot Bitcoin ETF"
+    expense_ratio: 0.0020
+  - symbol: TAN
+    type: "Solar ETF"
+    expense_ratio: 0.0070
+  - symbol: SOXX
+    type: "Semiconductor ETF"
+    expense_ratio: 0.0034
+  - symbol: XME
+    type: "Metals/mining ETF"
+    expense_ratio: 0.0035
+  - symbol: ARKB
+    type: "Spot Bitcoin ETF"
+    expense_ratio: 0.0021
+  - symbol: XBI
+    type: "Biotech ETF"
+    expense_ratio: 0.0035
+  - symbol: XLK
+    type: "S&P tech ETF"
+    expense_ratio: 0.0008
+  - symbol: SMH
+    type: "Semiconductor ETF"
+    expense_ratio: 0.0035
+  - symbol: VGT
+    type: "Vanguard tech ETF"
+    expense_ratio: 0.0009
+  - symbol: QQQ
+    type: "Nasdaq-100 ETF"
+    expense_ratio: 0.0018
+  - symbol: IWM
+    type: "Russell 2000 ETF"
+    expense_ratio: 0.0019
+  - symbol: TSLA
+    type: "Electric vehicle / tech stock"
+    expense_ratio: 0
+  - symbol: SOXL
+    type: "Semiconductors 3x leveraged ETF"
+    expense_ratio: 0.0075
+    leverage: 3
+  - symbol: TQQQ
+    type: "Nasdaq-100 3x leveraged ETF"
+    expense_ratio: 0.0082
+    leverage: 3
+  - symbol: NVDL
+    type: "Nvidia 2x leveraged ETF"
+    expense_ratio: 0.0105
+    leverage: 2
+  - symbol: BITX
+    type: "Bitcoin futures 2x leveraged ETF"
+    expense_ratio: 0.0238
+    leverage: 2
+  - symbol: TSLL
+    type: "Tesla 2x leveraged ETF"
+    expense_ratio: 0.0095
+    leverage: 2
+  - symbol: LABU
+    type: "Biotech 3x leveraged ETF"
+    expense_ratio: 0.0100
+    leverage: 3

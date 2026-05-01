@@ -1,0 +1,42 @@
+name: Paper Trading
+
+on:
+  schedule:
+    # 4:05 PM ET = 21:05 UTC (EST) / 20:05 UTC (EDT)
+    # Run at both times; the strategy is idempotent so a double-run is harmless.
+    # GitHub Actions cron uses UTC.
+    - cron: '5 21 * * 1-5'   # 4:05 PM EST (Nov–Mar)
+    - cron: '5 20 * * 1-5'   # 4:05 PM EDT (Mar–Nov)
+  workflow_dispatch:           # allow manual trigger from GitHub UI
+
+permissions:
+  contents: write  # needed to commit data.json back to repo
+
+jobs:
+  trade:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Restore paper state
+        # paper_state.json is committed to the repo and updated each run
+        run: echo "State file present:" && ls -la paper_state.json 2>/dev/null || echo "(none yet — first run)"
+
+      - name: Run paper trading step
+        run: go run ./cmd/paper -config config.yaml -state paper_state.json -out docs/data.json
+
+      - name: Commit updated state and dashboard data
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add paper_state.json docs/data.json docs/index.html
+          # Only commit if something changed
+          git diff --cached --quiet || git commit -m "paper: daily update $(date -u '+%Y-%m-%d')"
+          git push

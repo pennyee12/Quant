@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quant Paper Trading Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0d1117; color: #c9d1d9; min-height: 100vh; padding: 24px; }
+    h1 { font-size: 1.4rem; font-weight: 600; color: #f0f6fc; margin-bottom: 4px; }
+    .subtitle { font-size: 0.85rem; color: #8b949e; margin-bottom: 24px; }
+    .updated { font-size: 0.78rem; color: #8b949e; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-bottom: 32px; }
+    th { text-align: right; padding: 8px 12px; color: #8b949e; font-weight: 500; border-bottom: 1px solid #21262d; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    th:first-child { text-align: left; }
+    td { text-align: right; padding: 10px 12px; border-bottom: 1px solid #161b22; }
+    td:first-child { text-align: left; font-weight: 600; color: #f0f6fc; }
+    tr:hover td { background: #161b22; }
+    .pos { color: #3fb950; }
+    .neg { color: #f85149; }
+    .neu { color: #8b949e; }
+    .badge { display: inline-block; font-size: 0.72rem; padding: 2px 7px; border-radius: 10px; font-weight: 500; }
+    .badge-lev { background: #2d1b69; color: #a78bfa; }
+    section h2 { font-size: 1rem; font-weight: 600; color: #f0f6fc; margin-bottom: 12px; }
+    #chart-area { margin-bottom: 32px; }
+    canvas { width: 100% !important; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .card { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 16px; }
+    .card-symbol { font-size: 1rem; font-weight: 700; color: #f0f6fc; margin-bottom: 4px; }
+    .card-equity { font-size: 1.5rem; font-weight: 700; margin: 6px 0; }
+    .card-row { display: flex; justify-content: space-between; font-size: 0.82rem; color: #8b949e; margin-top: 4px; }
+    .card-row span:last-child { color: #c9d1d9; }
+    .empty { color: #8b949e; font-style: italic; padding: 24px 0; text-align: center; }
+    @media (max-width: 600px) { body { padding: 12px; } th, td { padding: 8px 6px; } }
+  </style>
+</head>
+<body>
+  <h1>Quant Paper Trading</h1>
+  <p class="subtitle">Top 10 tickers · GA-evolved strategy · $10,000 per ticker · Fills at daily close</p>
+  <p class="updated" id="updated">Loading…</p>
+
+  <section>
+    <h2>Positions</h2>
+    <div class="grid" id="cards"></div>
+  </section>
+
+  <section>
+    <h2>Summary Table</h2>
+    <table id="summary-table">
+      <thead>
+        <tr>
+          <th>Ticker</th>
+          <th>Equity</th>
+          <th>ROI</th>
+          <th>Max DD</th>
+          <th>Trades</th>
+          <th>Days</th>
+        </tr>
+      </thead>
+      <tbody id="summary-body"></tbody>
+    </table>
+  </section>
+
+  <section id="chart-area">
+    <h2>Equity Curves</h2>
+    <canvas id="chart" height="320"></canvas>
+  </section>
+
+  <section>
+    <h2>Recent Activity (last 20 rows)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Ticker</th>
+          <th>Close</th>
+          <th>Equity</th>
+          <th>ROI</th>
+          <th>Signal</th>
+          <th>Target</th>
+          <th>Order USD</th>
+        </tr>
+      </thead>
+      <tbody id="history-body"></tbody>
+    </table>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    const LEVERAGED = new Set(['SOXL','TQQQ','NVDL','BITX','TSLL','LABU']);
+    const COLORS = ['#3fb950','#58a6ff','#f78166','#d2a8ff','#ffa657','#79c0ff','#ff7b72','#56d364','#e3b341','#bc8cff'];
+
+    function fmt(n, decimals=2) { return n == null ? '—' : n.toLocaleString('en-US', {minimumFractionDigits: decimals, maximumFractionDigits: decimals}); }
+    function pct(n) {
+      if (n == null) return '—';
+      const s = (n*100).toFixed(1) + '%';
+      return `<span class="${n>0?'pos':n<0?'neg':'neu'}">${n>0?'+':''}${s}</span>`;
+    }
+    function money(n) { return '$' + fmt(n); }
+
+    fetch('data.json')
+      .then(r => r.ok ? r.json() : Promise.reject('data.json not found — run first paper trading step'))
+      .then(data => {
+        document.getElementById('updated').textContent = 'Last updated: ' + (data.updated_at || '—');
+
+        // Cards
+        const cards = document.getElementById('cards');
+        if (!data.positions || data.positions.length === 0) {
+          cards.innerHTML = '<p class="empty">No positions yet.</p>';
+        } else {
+          cards.innerHTML = data.positions.map((p, i) => {
+            const lev = LEVERAGED.has(p.symbol) ? '<span class="badge badge-lev">leveraged</span> ' : '';
+            const roiClass = p.roi > 0 ? 'pos' : p.roi < 0 ? 'neg' : 'neu';
+            return `<div class="card">
+              <div class="card-symbol">${lev}${p.symbol}</div>
+              <div class="card-equity ${roiClass}">${money(p.equity)}</div>
+              <div class="card-row"><span>ROI</span><span class="${roiClass}">${p.roi>0?'+':''}${(p.roi*100).toFixed(1)}%</span></div>
+              <div class="card-row"><span>Max DD</span><span class="neg">${(p.max_drawdown*100).toFixed(1)}%</span></div>
+              <div class="card-row"><span>Trades</span><span>${p.trade_count}</span></div>
+              <div class="card-row"><span>Last price</span><span>$${fmt(p.last_price)}</span></div>
+            </div>`;
+          }).join('');
+        }
+
+        // Summary table
+        const tbody = document.getElementById('summary-body');
+        const sorted = [...(data.summary || [])].sort((a,b) => b.roi - a.roi);
+        tbody.innerHTML = sorted.map(s => `<tr>
+          <td>${LEVERAGED.has(s.symbol)?'<span class="badge badge-lev">3x</span> ':''}${s.symbol}</td>
+          <td>${money(s.equity)}</td>
+          <td>${pct(s.roi)}</td>
+          <td><span class="neg">${(s.max_dd*100).toFixed(1)}%</span></td>
+          <td>${s.trade_count}</td>
+          <td>${s.days_since}</td>
+        </tr>`).join('');
+
+        // Equity chart
+        const hist = data.history || [];
+        const bySymbol = {};
+        hist.forEach(r => {
+          if (!bySymbol[r.symbol]) bySymbol[r.symbol] = {};
+          bySymbol[r.symbol][r.date] = r.equity;
+        });
+        const allDates = [...new Set(hist.map(r=>r.date))].sort();
+        const symbols = Object.keys(bySymbol);
+        const datasets = symbols.map((sym, i) => ({
+          label: sym,
+          data: allDates.map(d => bySymbol[sym][d] ?? null),
+          borderColor: COLORS[i % COLORS.length],
+          backgroundColor: 'transparent',
+          tension: 0.2,
+          pointRadius: 0,
+          borderWidth: 2,
+          spanGaps: true,
+        }));
+
+        new Chart(document.getElementById('chart'), {
+          type: 'line',
+          data: { labels: allDates, datasets },
+          options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: { labels: { color: '#8b949e', boxWidth: 12 } },
+              tooltip: {
+                callbacks: {
+                  label: ctx => ` ${ctx.dataset.label}: $${fmt(ctx.parsed.y)}`
+                }
+              }
+            },
+            scales: {
+              x: { ticks: { color: '#8b949e', maxTicksLimit: 10 }, grid: { color: '#21262d' } },
+              y: { ticks: { color: '#8b949e', callback: v => '$'+fmt(v,0) }, grid: { color: '#21262d' } }
+            }
+          }
+        });
+
+        // Recent history
+        const recent = hist.slice(-20).reverse();
+        document.getElementById('history-body').innerHTML = recent.map(r => `<tr>
+          <td>${r.date}</td>
+          <td>${r.symbol}</td>
+          <td>$${fmt(r.close)}</td>
+          <td>$${fmt(r.equity)}</td>
+          <td>${pct(r.roi)}</td>
+          <td>${r.signal>0?'+':''}${fmt(r.signal,3)}</td>
+          <td>${(r.target_weight*100).toFixed(0)}%</td>
+          <td>${r.order_usd===0?'—':(r.order_usd>0?'+':'')+money(r.order_usd)}</td>
+        </tr>`).join('');
+      })
+      .catch(err => {
+        document.getElementById('updated').textContent = 'Error: ' + err;
+      });
+  </script>
+</body>
+</html>

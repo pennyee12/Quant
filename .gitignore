@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# local data cache — large binary JSON files, no need in repo
+data/bars/
+
+# local Schwab credentials — never commit
+*.token.json
+
+# build artifacts
+quant
+
+# local claude context
+.claude/
+
+# editor
+.vscode/
+.idea/

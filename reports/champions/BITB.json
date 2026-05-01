@@ -1,0 +1,22 @@
+{
+  "t_macro": 27.510533748016243,
+  "t_micro": 13.874888448567356,
+  "t_deadline": 183.8898360188465,
+  "ema_anchor": 27.510533748016243,
+  "momentum_bars": 13.413277493172199,
+  "kp": -1.2899722289738622,
+  "kv": 0.17798919527010237,
+  "ka": -2.1965584759230197,
+  "trend_weight": 0.508526317403215,
+  "breakout_weight": 1.2249541309306595,
+  "volatility_weight": 1.2282288032157884,
+  "beta": 5.130672507576604,
+  "gamma": -1.080837530545283,
+  "sigmoid_scale": 2.466719941760538,
+  "sigma_floor": 0.001,
+  "min_trade_threshold": 0.06435505515229827,
+  "micro_reserve_rate": 0.6,
+  "max_position_weight": 1,
+  "deadline_force_pct": 0.3,
+  "profit_trim_threshold": 0.46227917654929535
+}
