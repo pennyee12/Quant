@@ -9,19 +9,22 @@ import (
 
 // Position holds the current state of one paper-traded ticker.
 type Position struct {
-	Symbol         string    `json:"symbol"`
-	Shares         float64   `json:"shares"`
-	Cash           float64   `json:"cash"`
-	InitialCapital float64   `json:"initial_capital"`
-	LastPrice      float64   `json:"last_price"`
-	Equity         float64   `json:"equity"`
-	ROI            float64   `json:"roi"`
-	TradeCount     int       `json:"trade_count"`
-	BarsSinceTrade int       `json:"bars_since_trade"`
-	PeakEquity     float64   `json:"peak_equity"`
-	MaxDrawdown    float64   `json:"max_drawdown"`
-	StartedAt      time.Time `json:"started_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	Symbol          string    `json:"symbol"`
+	Shares          float64   `json:"shares"`
+	Cash            float64   `json:"cash"`
+	InitialCapital  float64   `json:"initial_capital"`
+	LastPrice       float64   `json:"last_price"`
+	Equity          float64   `json:"equity"`
+	ROI             float64   `json:"roi"`
+	TradeCount      int       `json:"trade_count"`
+	BarsSinceTrade  int       `json:"bars_since_trade"`
+	PeakEquity      float64   `json:"peak_equity"`
+	MaxDrawdown     float64   `json:"max_drawdown"`
+	StartedAt       time.Time `json:"started_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+	// PendingOrderUSD is the order computed on yesterday's close, waiting to
+	// fill at today's open. Positive = buy, negative = sell, 0 = no order.
+	PendingOrderUSD float64   `json:"pending_order_usd"`
 }
 
 // DailyRecord is one row in the history log.

@@ -1,7 +1,10 @@
 // paper runs one daily paper-trading step for all configured tickers.
-// It fetches the latest bar from Yahoo Finance, runs the strategy using
-// the trained champion chromosome, updates positions, and writes JSON
-// results for the GitHub Pages dashboard.
+//
+// Each run does two things in order:
+//  1. Fill yesterday's pending order at today's open price.
+//  2. Compute today's signal on today's close and store a new pending order.
+//
+// This matches the backtest exactly: signal on bar[i] close → fill at bar[i+1] open.
 //
 // Usage:
 //
@@ -35,9 +38,9 @@ var paperTickers = []string{
 
 func main() {
 	configPath := flag.String("config", "config.yaml", "config file")
-	statePath := flag.String("state", "paper_state.json", "paper trading state file")
-	outPath := flag.String("out", "docs/data.json", "output JSON for dashboard")
-	warmup := flag.Int("warmup", 200, "warmup bars to fetch for indicator seeding")
+	statePath  := flag.String("state", "paper_state.json", "paper trading state file")
+	outPath    := flag.String("out", "docs/data.json", "output JSON for dashboard")
+	warmup     := flag.Int("warmup", 200, "warmup bars for indicator seeding")
 	flag.Parse()
 
 	cfg, err := config.Load(*configPath)
@@ -50,24 +53,23 @@ func main() {
 		log.Fatalf("state load: %v", err)
 	}
 
-	now := time.Now().UTC()
+	now   := time.Now().UTC()
 	today := now.Format("2006-01-02")
 
-	// Fetch enough history to seed indicators: warmup + last 5 days buffer
-	fetchStart := now.AddDate(0, 0, -(*warmup+10)*2) // 2x calendar days to account for weekends/holidays
+	// Fetch enough calendar days to cover warmup bars + weekends/holidays
+	fetchStart := now.AddDate(0, 0, -(*warmup+10)*2)
 
 	runCfg := backtest.RunConfig{
 		InitialCapital: cfg.Backtest.InitialCapital,
 		FeeBPS:         cfg.Backtest.FeeBPS,
 		SlippageBPS:    cfg.Backtest.SlippageBPS,
-		WarmupBars:     *warmup,
 	}
 
 	fmt.Printf("Paper trading run — %s — %d tickers\n\n", today, len(paperTickers))
 
 	for _, symbol := range paperTickers {
-		params := loadParams(symbol, cfg)
-		expenseRatio := expenseRatioFor(symbol, cfg)
+		params        := loadParams(symbol, cfg)
+		expenseRatio  := expenseRatioFor(symbol, cfg)
 		runCfg.ExpenseRatio = expenseRatio
 
 		bars, err := yahoo.FetchDaily(symbol, fetchStart, now)
@@ -80,62 +82,42 @@ func main() {
 			continue
 		}
 
-		// Use all bars for warmup, then step on the last bar
-		pos := state.FindPosition(symbol, cfg.Backtest.InitialCapital)
+		pos      := state.FindPosition(symbol, cfg.Backtest.InitialCapital)
+		todayBar := bars[len(bars)-1]
+		filledUSD := 0.0
 
-		// Build closes slice from all bars for indicator state
-		closes := make([]float64, 0, len(bars))
-		for _, b := range bars {
-			if b.Close > 0 {
-				closes = append(closes, b.Close)
+		// ── Phase 1: fill yesterday's pending order at today's open ──────────
+		if pos.PendingOrderUSD != 0 && todayBar.Open > 0 {
+			fillPrice := todayBar.Open
+			if pos.PendingOrderUSD > 0 {
+				spend := math.Min(pos.PendingOrderUSD, pos.Cash)
+				if spend >= params.MinTradeUSD {
+					fill    := fillPrice * (1 + runCfg.SlippageBPS/10000.0)
+					fee     := spend * runCfg.FeeBPS / 10000.0
+					netSpend := math.Min(spend, math.Max(0, pos.Cash-fee))
+					pos.Shares += netSpend / fill
+					pos.Cash   -= netSpend + fee
+					pos.TradeCount++
+					pos.BarsSinceTrade = 0
+					filledUSD = spend
+				}
+			} else {
+				wantSell := math.Min(-pos.PendingOrderUSD/fillPrice, pos.Shares)
+				if wantSell*fillPrice >= params.MinTradeUSD {
+					fill  := fillPrice * (1 - runCfg.SlippageBPS/10000.0)
+					gross := wantSell * fill
+					fee   := gross * runCfg.FeeBPS / 10000.0
+					pos.Shares -= wantSell
+					pos.Cash   += gross - fee
+					pos.TradeCount++
+					pos.BarsSinceTrade = 0
+					filledUSD = -wantSell * fillPrice
+				}
 			}
+			pos.PendingOrderUSD = 0
 		}
 
-		lastBar := bars[len(bars)-1]
-		equity := pos.Cash + pos.Shares*lastBar.Close
-
-		out := strategy.Step(quant.StrategyInput{
-			Closes: closes,
-			Portfolio: quant.PortfolioSnapshot{
-				Cash:           pos.Cash,
-				Shares:         pos.Shares,
-				Equity:         equity,
-				LastPrice:      lastBar.Close,
-				TradeCount:     pos.TradeCount,
-				BarsSinceTrade: pos.BarsSinceTrade,
-			},
-			Params: params,
-		})
-
-		orderUSD := 0.0
-		// Simulate fill at last bar's close (next open not available yet — will adjust tomorrow)
-		fillPrice := lastBar.Close
-		if out.OrderUSD > 0 {
-			spend := math.Min(out.OrderUSD, pos.Cash)
-			if spend >= params.MinTradeUSD {
-				fill := fillPrice * (1 + runCfg.SlippageBPS/10000.0)
-				fee := spend * runCfg.FeeBPS / 10000.0
-				netSpend := math.Min(spend, math.Max(0, pos.Cash-fee))
-				pos.Shares += netSpend / fill
-				pos.Cash -= netSpend + fee
-				pos.TradeCount++
-				pos.BarsSinceTrade = 0
-				orderUSD = spend
-			}
-		} else if out.OrderUSD < 0 {
-			wantSell := math.Min(-out.OrderUSD/fillPrice, pos.Shares)
-			if wantSell*fillPrice >= params.MinTradeUSD {
-				fill := fillPrice * (1 - runCfg.SlippageBPS/10000.0)
-				gross := wantSell * fill
-				fee := gross * runCfg.FeeBPS / 10000.0
-				pos.Shares -= wantSell
-				pos.Cash += gross - fee
-				pos.TradeCount++
-				pos.BarsSinceTrade = 0
-				orderUSD = -wantSell * fillPrice
-			}
-		}
-
+		// Apply daily expense ratio drag
 		if expenseRatio > 0 && pos.Shares > 0 {
 			pos.Shares *= math.Max(0, 1-expenseRatio/252.0)
 		}
@@ -143,36 +125,65 @@ func main() {
 			pos.BarsSinceTrade++
 		}
 
-		pos.UpdateMetrics(lastBar.Close)
+		// ── Phase 2: compute signal on today's close, store pending order ─────
+		closes := make([]float64, 0, len(bars))
+		for _, b := range bars {
+			if b.Close > 0 {
+				closes = append(closes, b.Close)
+			}
+		}
+
+		equity := pos.Cash + pos.Shares*todayBar.Close
+		out := strategy.Step(quant.StrategyInput{
+			Closes: closes,
+			Portfolio: quant.PortfolioSnapshot{
+				Cash:           pos.Cash,
+				Shares:         pos.Shares,
+				Equity:         equity,
+				LastPrice:      todayBar.Close,
+				TradeCount:     pos.TradeCount,
+				BarsSinceTrade: pos.BarsSinceTrade,
+			},
+			Params: params,
+		})
+
+		// Store order to fill tomorrow at open
+		pos.PendingOrderUSD = out.OrderUSD
+		pos.UpdateMetrics(todayBar.Close)
 
 		rec := paper.DailyRecord{
 			Date:     today,
 			Symbol:   symbol,
-			Close:    lastBar.Close,
+			Close:    todayBar.Close,
 			Equity:   pos.Equity,
 			ROI:      pos.ROI,
 			Signal:   out.Signal,
 			Target:   out.TargetWeight,
-			OrderUSD: orderUSD,
+			OrderUSD: filledUSD,
 			Trades:   pos.TradeCount,
 			MaxDD:    pos.MaxDrawdown,
 		}
 		state.History = append(state.History, rec)
 
-		sign := " "
-		if orderUSD > 0 {
-			sign = "+"
-		} else if orderUSD < 0 {
-			sign = "-"
+		fillStr := "  —  "
+		if filledUSD > 0 {
+			fillStr = fmt.Sprintf("filled +$%.0f", filledUSD)
+		} else if filledUSD < 0 {
+			fillStr = fmt.Sprintf("filled -$%.0f", math.Abs(filledUSD))
 		}
-		fmt.Printf("  %-6s  close=%.2f  equity=$%9.2f  ROI=%+.1f%%  signal=%+.3f  target=%.0f%%  order=%s$%.0f\n",
-			symbol, lastBar.Close, pos.Equity, pos.ROI*100, out.Signal, out.TargetWeight*100, sign, math.Abs(orderUSD))
+		pendStr := "no pending"
+		if out.OrderUSD > 0 {
+			pendStr = fmt.Sprintf("pending +$%.0f", out.OrderUSD)
+		} else if out.OrderUSD < 0 {
+			pendStr = fmt.Sprintf("pending -$%.0f", math.Abs(out.OrderUSD))
+		}
+		fmt.Printf("  %-6s  close=$%8.2f  equity=$%10.2f  ROI=%+6.1f%%  %-18s  %-18s\n",
+			symbol, todayBar.Close, pos.Equity, pos.ROI*100, fillStr, pendStr)
 	}
 
 	if err := state.Save(*statePath); err != nil {
 		log.Fatalf("state save: %v", err)
 	}
-
 	if err := writeDashboardJSON(*outPath, state, today); err != nil {
 		log.Fatalf("dashboard write: %v", err)
 	}
@@ -180,7 +191,6 @@ func main() {
 	fmt.Printf("\nState saved → %s\nDashboard  → %s\n", *statePath, *outPath)
 }
 
-// loadParams loads the trained champion chromosome for a symbol, falling back to default.
 func loadParams(symbol string, cfg *config.Config) quant.StrategyParams {
 	path := filepath.Join("reports", "champions", symbol+".json")
 	raw, err := os.ReadFile(path)
@@ -192,7 +202,6 @@ func loadParams(symbol string, cfg *config.Config) quant.StrategyParams {
 		return genome.Default.ToParams()
 	}
 	params := c.ToParams()
-	params.MinTradeUSD = cfg.Backtest.FeeBPS // reuse fee as floor proxy
 	if params.MinTradeUSD < 10 {
 		params.MinTradeUSD = 10.10
 	}
@@ -210,26 +219,25 @@ func expenseRatioFor(symbol string, cfg *config.Config) float64 {
 
 // DashboardData is the JSON structure consumed by the GitHub Pages dashboard.
 type DashboardData struct {
-	UpdatedAt   string              `json:"updated_at"`
-	Positions   []paper.Position    `json:"positions"`
-	History     []paper.DailyRecord `json:"history"`
-	Summary     []TickerSummary     `json:"summary"`
+	UpdatedAt string              `json:"updated_at"`
+	Positions []paper.Position    `json:"positions"`
+	History   []paper.DailyRecord `json:"history"`
+	Summary   []TickerSummary     `json:"summary"`
 }
 
 type TickerSummary struct {
-	Symbol      string  `json:"symbol"`
-	Equity      float64 `json:"equity"`
-	ROI         float64 `json:"roi"`
-	MaxDD       float64 `json:"max_dd"`
-	TradeCount  int     `json:"trade_count"`
-	DaysSince   int     `json:"days_since_start"`
+	Symbol     string  `json:"symbol"`
+	Equity     float64 `json:"equity"`
+	ROI        float64 `json:"roi"`
+	MaxDD      float64 `json:"max_dd"`
+	TradeCount int     `json:"trade_count"`
+	DaysSince  int     `json:"days_since_start"`
 }
 
 func writeDashboardJSON(path string, state *paper.State, today string) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return err
 	}
-
 	summary := make([]TickerSummary, 0, len(state.Positions))
 	for _, p := range state.Positions {
 		days := int(time.Since(p.StartedAt).Hours() / 24)
@@ -242,14 +250,12 @@ func writeDashboardJSON(path string, state *paper.State, today string) error {
 			DaysSince:  days,
 		})
 	}
-
 	data := DashboardData{
 		UpdatedAt: today,
 		Positions: state.Positions,
 		History:   state.History,
 		Summary:   summary,
 	}
-
 	raw, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return err
