@@ -50,8 +50,11 @@
       <thead>
         <tr>
           <th>Ticker</th>
+          <th>Shares</th>
+          <th>Cash</th>
           <th>Equity</th>
           <th>ROI</th>
+          <th>Pending</th>
           <th>Max DD</th>
           <th>Trades</th>
           <th>Days</th>
@@ -78,7 +81,10 @@
           <th>ROI</th>
           <th>Signal</th>
           <th>Target</th>
-          <th>Order USD</th>
+          <th>Fill</th>
+          <th>Fill Price</th>
+          <th>Shares</th>
+          <th>When</th>
         </tr>
       </thead>
       <tbody id="history-body"></tbody>
@@ -114,6 +120,10 @@
             return `<div class="card">
               <div class="card-symbol">${lev}${p.symbol}</div>
               <div class="card-equity ${roiClass}">${money(p.equity)}</div>
+              <div class="card-row"><span>Shares owned</span><span>${fmt(p.shares, 4)}</span></div>
+              <div class="card-row"><span>Position value</span><span>${money((p.shares || 0) * (p.last_price || 0))}</span></div>
+              <div class="card-row"><span>Cash</span><span>${money(p.cash)}</span></div>
+              <div class="card-row"><span>Pending</span><span>${p.pending_order_usd===0?'—':(p.pending_order_usd>0?'+':'')+money(p.pending_order_usd)}</span></div>
               <div class="card-row"><span>ROI</span><span class="${roiClass}">${p.roi>0?'+':''}${(p.roi*100).toFixed(1)}%</span></div>
               <div class="card-row"><span>Max DD</span><span class="neg">${(p.max_drawdown*100).toFixed(1)}%</span></div>
               <div class="card-row"><span>Trades</span><span>${p.trade_count}</span></div>
@@ -124,15 +134,22 @@
 
         // Summary table
         const tbody = document.getElementById('summary-body');
+        const positionsBySymbol = Object.fromEntries((data.positions || []).map(p => [p.symbol, p]));
         const sorted = [...(data.summary || [])].sort((a,b) => b.roi - a.roi);
-        tbody.innerHTML = sorted.map(s => `<tr>
+        tbody.innerHTML = sorted.map(s => {
+          const p = positionsBySymbol[s.symbol] || {};
+          return `<tr>
           <td>${LEVERAGED.has(s.symbol)?'<span class="badge badge-lev">3x</span> ':''}${s.symbol}</td>
+          <td>${fmt(p.shares || 0, 4)}</td>
+          <td>${money(p.cash || 0)}</td>
           <td>${money(s.equity)}</td>
           <td>${pct(s.roi)}</td>
+          <td>${(p.pending_order_usd || 0)===0?'—':((p.pending_order_usd || 0)>0?'+':'')+money(p.pending_order_usd)}</td>
           <td><span class="neg">${(s.max_dd*100).toFixed(1)}%</span></td>
           <td>${s.trade_count}</td>
           <td>${s.days_since}</td>
-        </tr>`).join('');
+        </tr>`;
+        }).join('');
 
         // Equity chart
         const hist = data.history || [];
@@ -177,16 +194,24 @@
 
         // Recent history
         const recent = hist.slice(-20).reverse();
-        document.getElementById('history-body').innerHTML = recent.map(r => `<tr>
+        document.getElementById('history-body').innerHTML = recent.map(r => {
+          const inferredFillPrice = r.fill_price || (r.order_usd !== 0 ? r.close : 0);
+          const fillShares = inferredFillPrice ? Math.abs(r.order_usd / inferredFillPrice) : 0;
+          const fillMode = r.fill_mode || (r.order_usd !== 0 ? 'close*' : '');
+          return `<tr>
           <td>${r.date}</td>
           <td>${r.symbol}</td>
           <td>$${fmt(r.close)}</td>
           <td>$${fmt(r.equity)}</td>
           <td>${pct(r.roi)}</td>
           <td>${r.signal>0?'+':''}${fmt(r.signal,3)}</td>
-          <td>${(r.target_weight*100).toFixed(0)}%</td>
-          <td>${r.order_usd===0?'—':(r.order_usd>0?'+':'')+money(r.order_usd)}</td>
-        </tr>`).join('');
+          <td>${((r.target || 0)*100).toFixed(0)}%</td>
+          <td>${r.order_usd===0?'—':(r.order_usd>0?'Bought ':'Sold ')+money(Math.abs(r.order_usd))}</td>
+          <td>${inferredFillPrice ? '$'+fmt(inferredFillPrice) : '—'}</td>
+          <td>${fillShares ? fmt(fillShares, 4) : '—'}</td>
+          <td>${fillMode ? `${r.fill_time || r.date} ${fillMode}` : '—'}</td>
+        </tr>`;
+        }).join('');
       })
       .catch(err => {
         document.getElementById('updated').textContent = 'Error: ' + err;

@@ -56,6 +56,13 @@ func main() {
 
 	now := time.Now().UTC()
 	today := now.Format("2006-01-02")
+	if !*fillPendingAtClose && processedSymbolsForDate(state, today) >= len(paperTickers) {
+		fmt.Printf("Paper trading run — %s already processed; skipping duplicate scheduled run\n", today)
+		if err := writeDashboardJSON(*outPath, state, today); err != nil {
+			log.Fatalf("dashboard write: %v", err)
+		}
+		return
+	}
 
 	// Fetch enough calendar days to cover warmup bars + weekends/holidays
 	fetchStart := now.AddDate(0, 0, -(*warmup+10)*2)
@@ -86,6 +93,8 @@ func main() {
 		pos := state.FindPosition(symbol, cfg.Backtest.InitialCapital)
 		todayBar := bars[len(bars)-1]
 		filledUSD := 0.0
+		actualFillPrice := 0.0
+		fillMode := "open"
 
 		// Phase 1: fill the pending order. Normal mode fills at today's open.
 		// Manual bootstrap mode fills at today's close so paper trading can
@@ -93,9 +102,13 @@ func main() {
 		fillPrice := todayBar.Open
 		if *fillPendingAtClose {
 			fillPrice = todayBar.Close
+			fillMode = "close"
 		}
 		if pos.PendingOrderUSD != 0 && fillPrice > 0 {
 			filledUSD = fillPendingOrder(pos, params, runCfg, fillPrice)
+			if filledUSD != 0 {
+				actualFillPrice = fillPrice
+			}
 			pos.PendingOrderUSD = 0
 		}
 
@@ -134,16 +147,23 @@ func main() {
 		pos.UpdateMetrics(todayBar.Close)
 
 		rec := paper.DailyRecord{
-			Date:     today,
-			Symbol:   symbol,
-			Close:    todayBar.Close,
-			Equity:   pos.Equity,
-			ROI:      pos.ROI,
-			Signal:   out.Signal,
-			Target:   out.TargetWeight,
-			OrderUSD: filledUSD,
-			Trades:   pos.TradeCount,
-			MaxDD:    pos.MaxDrawdown,
+			Date:      today,
+			Symbol:    symbol,
+			Close:     todayBar.Close,
+			Equity:    pos.Equity,
+			ROI:       pos.ROI,
+			Signal:    out.Signal,
+			Target:    out.TargetWeight,
+			OrderUSD:  filledUSD,
+			FillPrice: actualFillPrice,
+			FillTime:  today,
+			FillMode:  fillMode,
+			Trades:    pos.TradeCount,
+			MaxDD:     pos.MaxDrawdown,
+		}
+		if filledUSD == 0 {
+			rec.FillTime = ""
+			rec.FillMode = ""
 		}
 		state.History = append(state.History, rec)
 
@@ -201,6 +221,16 @@ func fillPendingOrder(pos *paper.Position, params quant.StrategyParams, runCfg b
 	pos.TradeCount++
 	pos.BarsSinceTrade = 0
 	return -wantSell * fillPrice
+}
+
+func processedSymbolsForDate(state *paper.State, date string) int {
+	seen := make(map[string]bool)
+	for _, rec := range state.History {
+		if rec.Date == date {
+			seen[rec.Symbol] = true
+		}
+	}
+	return len(seen)
 }
 
 func loadParams(symbol string, cfg *config.Config) quant.StrategyParams {
