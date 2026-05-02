@@ -12,6 +12,10 @@ data/bars/
 .env.*
 !.env.example
 
+# local trading runtime state/logs
+alpaca_state.json
+logs/
+
 # build artifacts
 /quant
 

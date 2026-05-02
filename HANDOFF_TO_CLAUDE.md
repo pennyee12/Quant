@@ -7,6 +7,68 @@ Date: 2026-05-01
 > repo summary is `HANDOVER.md`. The section below records the latest GitHub
 > paper-trading state as of 2026-05-01 evening.
 
+## Claude Takeover Update — 2026-05-02
+
+Read `HANDOVER.md` first. It now has the authoritative latest state.
+
+Newest user direction:
+
+- Continue building a **local Alpaca paper trading app**.
+- User prefers local Mac execution for security.
+- Do not put Alpaca API keys in GitHub.
+- `.env` exists locally and is ignored by git.
+
+Alpaca paper account connection has been verified:
+
+```text
+account: PA319IDR95I7
+status: ACTIVE
+cash: $100,000
+buying power: $200,000
+trading blocked: false
+```
+
+Already committed and pushed:
+
+- `internal/alpaca/client.go`
+- `cmd/alpaca-paper/main.go`
+- `ALPACA_SETUP.md`
+- `.env.example`
+
+`cmd/alpaca-paper` is dry-run by default. It only places Alpaca paper orders with
+explicit `-execute`.
+
+Verified commands:
+
+```bash
+go test ./...
+go run ./cmd/alpaca-paper -env .env -tickers TSLA,RIOT
+go run ./cmd/alpaca-paper -env .env
+```
+
+Latest dry-run decision summary:
+
+```text
+buy:  RIOT, MARA, TSLA, CLSK, SOXX, LABU
+hold: SOXL, TQQQ, MSTR, TSLL
+```
+
+Current uncommitted WIP:
+
+- `.gitignore` now ignores `alpaca_state.json` and `logs/`
+- `internal/alpaca/state.go` exists but is not wired into `cmd/alpaca-paper`
+
+Recommended next task:
+
+- wire local `alpaca_state.json` into the Alpaca runner
+- record decisions/orders/request IDs
+- add duplicate-date guard
+- add safety limits before allowing `-execute`
+- keep everything paper-only
+
+Security note: user pasted the paper secret into chat earlier. Recommend
+regenerating the Alpaca paper key after the local app flow is validated.
+
 ## Latest Status — GitHub Paper Trading Is Running
 
 The local research app has evolved into a GitHub-hosted paper-trading workflow:

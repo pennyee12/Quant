@@ -4,6 +4,114 @@ Last updated: 2026-05-01. Written for Codex / Claude to continue development.
 
 ---
 
+## Claude Takeover Note — 2026-05-02
+
+User wants Claude Code to continue from here. The newest direction is:
+
+- Build a **local-first Alpaca paper trading app** on the user's Mac.
+- Keep the Alpaca API key local in `.env`; do **not** put it in GitHub.
+- User may later move the app to a VPS/cloud, but wants local execution first
+  for better security.
+- User will try to keep the Mac on; reboot only before market open or after
+  market close.
+
+Current Alpaca status:
+
+- Alpaca paper account connection is verified.
+- Account smoke test succeeded:
+  - account: `PA319IDR95I7`
+  - status: `ACTIVE`
+  - cash: `$100,000`
+  - buying power: `$200,000`
+  - trading blocked: `false`
+- Alpaca paper keys are in local `.env`, which is ignored by git.
+- The user pasted the paper secret into chat earlier, so recommend regenerating
+  the Alpaca paper key after the workflow is fully tested.
+
+Committed Alpaca code already pushed:
+
+- `internal/alpaca/client.go`
+  - loads `.env`
+  - gets account
+  - gets positions
+  - fetches Alpaca daily bars
+  - can submit market notional buys and market quantity sells
+- `cmd/alpaca-paper/main.go`
+  - top-10 Alpaca-backed strategy runner
+  - dry-run by default
+  - uses Alpaca data with `feed=iex`
+  - loads champion genes from `reports/champions/{SYMBOL}.json`
+  - places paper orders only with explicit `-execute`
+- `ALPACA_SETUP.md`
+- `.env.example`
+
+Verified local commands:
+
+```bash
+go test ./...
+
+go run ./cmd/alpaca-paper -env .env -tickers TSLA,RIOT
+
+go run ./cmd/alpaca-paper -env .env
+```
+
+Recent dry-run output for all top 10, using Alpaca IEX feed, showed:
+
+```text
+buy:  RIOT, MARA, TSLA, CLSK, SOXX, LABU
+hold: SOXL, TQQQ, MSTR, TSLL
+```
+
+Important: this was dry-run only. No Alpaca orders were submitted.
+
+Current uncommitted local changes at takeover:
+
+- `.gitignore` modified to ignore:
+  - `alpaca_state.json`
+  - `logs/`
+- `internal/alpaca/state.go` added but not yet wired into `cmd/alpaca-paper`.
+  It defines:
+  - `RunState`
+  - `Decision`
+  - `OrderEvent`
+  - `LoadRunState`
+  - `Save`
+
+Recommended next Claude task:
+
+1. Finish wiring local Alpaca run state into `cmd/alpaca-paper`.
+2. Add flags:
+   - `-state alpaca_state.json`
+   - `-force` to bypass duplicate-date guard
+   - maybe `-log-dir logs`
+3. Record every decision and every submitted order with Alpaca `X-Request-ID`.
+4. Add duplicate-date guard for local Alpaca runs, similar to `cmd/paper`.
+5. Add safety gates before `-execute`:
+   - paper endpoint only unless a future explicit live mode is added
+   - max order notional
+   - max total exposure
+   - account/trading-block checks
+   - no shorting unless intentionally designed
+6. Keep `-execute` paper-only for now.
+7. Run:
+
+```bash
+go test ./...
+go run ./cmd/alpaca-paper -env .env
+```
+
+Do not commit `.env`, Alpaca keys, local logs, or local runtime state.
+
+There is also an untracked PDF in the workspace:
+
+```text
+The 11 Trading Rules Of A Market Wizard - Marty Schwartz -.pdf
+```
+
+Treat it as user material. Do not commit it unless explicitly asked.
+
+---
+
 ## Latest Operational Update — GitHub Paper Trading
 
 GitHub paper trading is now running and verified.
