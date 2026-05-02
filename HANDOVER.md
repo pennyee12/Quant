@@ -87,6 +87,7 @@ cmd/
   paper/main.go       — Daily paper trading step (runs in GitHub Actions)
 
 internal/
+  alpaca/             — Alpaca paper trading/data client using env credentials
   backtest/           — backtest.go (Run), ghost_dca.go (SimulateGhostDCA)
   config/config.go    — YAML config loader; TickerConfig has leverage field (informational)
   ga/
@@ -102,6 +103,9 @@ internal/
   schwab/client.go    — Schwab OAuth2 client (local only, not used in GitHub Actions)
   strategy/step.go    — Pure Step() function: signal → target weight → order USD
   yahoo/fetch.go      — FetchDaily(): fetches OHLCV bars from Yahoo Finance (no auth)
+
+cmd/alpaca-paper/main.go — Alpaca-backed top-10 runner; dry-run by default,
+                           submits paper orders only with -execute
 
 docs/
   index.html          — GitHub Pages dashboard (reads data.json, uses Chart.js CDN)
@@ -120,6 +124,12 @@ reports/
 paper_state.json      — Live paper trading state (committed to repo, updated daily)
 config.yaml           — All settings; 30 tickers total (24 original + 6 leveraged ETFs)
 ```
+
+Alpaca files:
+
+- `.env.example` — safe template only
+- `.env` — local secret file, ignored by git
+- `ALPACA_SETUP.md` — setup and run instructions
 
 ---
 
@@ -238,6 +248,53 @@ Avoid (negative alpha): XLK, XME, IBIT, FBTC, ARKB, TSLA, RIOT, NVDL
   2026-05-04 around 4:05 PM ET.
 
 GitHub Pages config: Settings → Pages → Branch: main → Folder: /docs
+
+---
+
+## Alpaca Paper Trading Setup
+
+Alpaca paper API credentials are configured locally in `.env` and must not be
+committed.
+
+Current verified paper account smoke test:
+
+- account: `PA319IDR95I7`
+- status: `ACTIVE`
+- cash: `$100,000`
+- buying power: `$200,000`
+- trading blocked: `false`
+
+Run a dry-run top-10 strategy check:
+
+```bash
+go run ./cmd/alpaca-paper -env .env
+```
+
+Run a smaller dry-run:
+
+```bash
+go run ./cmd/alpaca-paper -env .env -tickers TSLA,RIOT
+```
+
+Submit paper orders to Alpaca only when explicitly requested:
+
+```bash
+go run ./cmd/alpaca-paper -env .env -execute
+```
+
+Design notes:
+
+- Default mode is dry-run and places no orders.
+- Uses Alpaca Market Data daily bars with `feed=iex` by default.
+- Loads trained champion genes from `reports/champions/{SYMBOL}.json`.
+- Uses `$10,000` virtual allocation per ticker by default.
+- Reads actual Alpaca paper positions and adjusts action sizing from those
+  holdings.
+- Buy orders use market notional orders.
+- Sell orders use market quantity orders.
+- Intended future cloud path: put Alpaca keys in GitHub/VPS secrets and run
+  `cmd/alpaca-paper` after market close. Start cloud in dry-run before using
+  `-execute`.
 
 ---
 
