@@ -1,12 +1,12 @@
 {
-  "updated_at": "2026-05-08",
+  "updated_at": "2026-05-11",
   "positions": [
     {
       "symbol": "SOXL",
       "shares": 0,
       "cash": 10000,
       "initial_capital": 10000,
-      "last_price": 176.94000244140625,
+      "last_price": 190.4199981689453,
       "equity": 10000,
       "roi": 0,
       "trade_count": 0,
@@ -14,7 +14,7 @@
       "peak_equity": 10000,
       "max_drawdown": 0,
       "started_at": "2026-05-01T20:46:56.641431199Z",
-      "updated_at": "2026-05-08T21:03:44.481827861Z",
+      "updated_at": "2026-05-11T21:19:56.087437443Z",
       "pending_order_usd": 0
     },
     {
@@ -22,39 +22,39 @@
       "shares": 530.2860675892839,
       "cash": 152.09222725550535,
       "initial_capital": 10000,
-      "last_price": 24.079999923706055,
-      "equity": 12921.380694347845,
-      "roi": 0.2921380694347844,
+      "last_price": 25.34000015258789,
+      "equity": 13589.541260883192,
+      "roi": 0.3589541260883191,
       "trade_count": 2,
-      "bars_since_trade": 5,
-      "peak_equity": 12937.28964049407,
+      "bars_since_trade": 6,
+      "peak_equity": 13589.541260883192,
       "max_drawdown": 0.0012296969912792832,
       "started_at": "2026-05-01T20:46:56.678068332Z",
-      "updated_at": "2026-05-08T21:03:44.512355881Z",
+      "updated_at": "2026-05-11T21:19:56.213685054Z",
       "pending_order_usd": 0
     },
     {
       "symbol": "MARA",
-      "shares": 688.7714522796426,
-      "cash": 1648.0725394811084,
+      "shares": 799.8454002985836,
+      "cash": 206.57895450276305,
       "initial_capital": 10000,
-      "last_price": 12.9399995803833,
-      "equity": 10560.774842959681,
-      "roi": 0.05607748429596815,
-      "trade_count": 6,
+      "last_price": 13.390000343322754,
+      "equity": 10916.509139105923,
+      "roi": 0.09165091391059232,
+      "trade_count": 7,
       "bars_since_trade": 1,
-      "peak_equity": 10560.774842959681,
+      "peak_equity": 10916.509139105923,
       "max_drawdown": 0.014863583896190136,
       "started_at": "2026-05-01T20:46:56.73119906Z",
-      "updated_at": "2026-05-08T21:03:44.545606259Z",
-      "pending_order_usd": 1441.349450033342
+      "updated_at": "2026-05-11T21:19:56.366681367Z",
+      "pending_order_usd": 0
     },
     {
       "symbol": "TQQQ",
       "shares": 0,
       "cash": 10000,
       "initial_capital": 10000,
-      "last_price": 76.27999877929688,
+      "last_price": 76.95999908447266,
       "equity": 10000,
       "roi": 0,
       "trade_count": 0,
@@ -62,7 +62,7 @@
       "peak_equity": 10000,
       "max_drawdown": 0,
       "started_at": "2026-05-01T20:46:56.780314399Z",
-      "updated_at": "2026-05-08T21:03:44.589934837Z",
+      "updated_at": "2026-05-11T21:19:56.532051109Z",
       "pending_order_usd": 0
     },
     {
@@ -70,7 +70,7 @@
       "shares": 0,
       "cash": 10000,
       "initial_capital": 10000,
-      "last_price": 187.58999633789062,
+      "last_price": 195.94000244140625,
       "equity": 10000,
       "roi": 0,
       "trade_count": 0,
@@ -78,7 +78,7 @@
       "peak_equity": 10000,
       "max_drawdown": 0,
       "started_at": "2026-05-01T20:46:56.813606377Z",
-      "updated_at": "2026-05-08T21:03:44.626420172Z",
+      "updated_at": "2026-05-11T21:19:56.651188648Z",
       "pending_order_usd": 0
     },
     {
@@ -86,15 +86,15 @@
       "shares": 25.590832532478373,
       "cash": 0,
       "initial_capital": 10000,
-      "last_price": 428.3500061035156,
-      "equity": 10961.833271481157,
-      "roi": 0.09618332714811562,
+      "last_price": 445,
+      "equity": 11387.920476952877,
+      "roi": 0.13879204769528775,
       "trade_count": 2,
       "bars_since_trade": 2,
-      "peak_equity": 10961.833271481157,
+      "peak_equity": 11387.920476952877,
       "max_drawdown": 0.007999833304410342,
       "started_at": "2026-05-01T20:46:56.845730394Z",
-      "updated_at": "2026-05-08T21:03:44.668151128Z",
+      "updated_at": "2026-05-11T21:19:56.738514405Z",
       "pending_order_usd": 0
     },
     {
@@ -102,31 +102,31 @@
       "shares": 643.3571611131039,
       "cash": 1851.3005793905759,
       "initial_capital": 10000,
-      "last_price": 14.199999809265137,
-      "equity": 10986.972144486012,
-      "roi": 0.09869721444860113,
+      "last_price": 14.300000190734863,
+      "equity": 11051.308106018601,
+      "roi": 0.10513081060186025,
       "trade_count": 2,
       "bars_since_trade": 3,
       "peak_equity": 11179.979415530583,
       "max_drawdown": 0.02992367032622789,
       "started_at": "2026-05-01T20:46:56.876624983Z",
-      "updated_at": "2026-05-08T21:03:44.709715724Z",
+      "updated_at": "2026-05-11T21:19:56.850792861Z",
       "pending_order_usd": 0
     },
     {
       "symbol": "TSLL",
-      "shares": 743.45681222504,
+      "shares": 743.4287850833093,
       "cash": 94.45113087373329,
       "initial_capital": 10000,
-      "last_price": 15.619999885559082,
-      "equity": 11707.246452746978,
-      "roi": 0.17072464527469777,
+      "last_price": 16.834999084472656,
+      "equity": 12610.074047121865,
+      "roi": 0.2610074047121864,
       "trade_count": 4,
       "bars_since_trade": 2,
-      "peak_equity": 11707.246452746978,
+      "peak_equity": 12610.074047121865,
       "max_drawdown": 0.002308598938977946,
       "started_at": "2026-05-01T20:46:56.920674228Z",
-      "updated_at": "2026-05-08T21:03:44.750259169Z",
+      "updated_at": "2026-05-11T21:19:56.966365812Z",
       "pending_order_usd": 0
     },
     {
@@ -134,32 +134,32 @@
       "shares": 0,
       "cash": 10688.656307781042,
       "initial_capital": 10000,
-      "last_price": 520.2999877929688,
+      "last_price": 532.760009765625,
       "equity": 10688.656307781042,
       "roi": 0.06886563077810415,
       "trade_count": 4,
-      "bars_since_trade": 2,
+      "bars_since_trade": 3,
       "peak_equity": 10730.337802828606,
       "max_drawdown": 0.010383422144496945,
       "started_at": "2026-05-01T20:46:56.976486993Z",
-      "updated_at": "2026-05-08T21:03:44.808359835Z",
+      "updated_at": "2026-05-11T21:19:57.128390772Z",
       "pending_order_usd": 0
     },
     {
       "symbol": "LABU",
-      "shares": 0.5210074112823542,
+      "shares": 0.5209867363850811,
       "cash": 10902.734618167806,
       "initial_capital": 10000,
       "last_price": 189.88999938964844,
-      "equity": 11001.668715178213,
-      "roi": 0.10016687151782144,
+      "equity": 11001.664789221984,
+      "roi": 0.10016647892219854,
       "trade_count": 4,
       "bars_since_trade": 1,
       "peak_equity": 11008.59609450182,
       "max_drawdown": 0.0008130239383082882,
       "started_at": "2026-05-01T20:46:57.037143337Z",
-      "updated_at": "2026-05-08T21:03:44.867305236Z",
-      "pending_order_usd": 0
+      "updated_at": "2026-05-11T21:19:57.272943556Z",
+      "pending_order_usd": 6389.540975140113
     }
   ],
   "history": [
@@ -1074,6 +1074,129 @@
       "order_usd": 0,
       "trades": 4,
       "max_dd": 0.0008130239383082882
+    },
+    {
+      "date": "2026-05-11",
+      "symbol": "SOXL",
+      "close": 190.4199981689453,
+      "equity": 10000,
+      "roi": 0,
+      "signal": 1.3620278552255016,
+      "target": 0.0000035252204665068205,
+      "order_usd": 0,
+      "trades": 0,
+      "max_dd": 0
+    },
+    {
+      "date": "2026-05-11",
+      "symbol": "RIOT",
+      "close": 25.34000015258789,
+      "equity": 13589.541260883192,
+      "roi": 0.3589541260883191,
+      "signal": -13.293579213519424,
+      "target": 0.988572045971551,
+      "order_usd": 0,
+      "trades": 2,
+      "max_dd": 0.0012296969912792832
+    },
+    {
+      "date": "2026-05-11",
+      "symbol": "MARA",
+      "close": 13.390000343322754,
+      "equity": 10916.509139105923,
+      "roi": 0.09165091391059232,
+      "signal": -2.4115271719769806,
+      "target": 1,
+      "order_usd": 1441.349450033342,
+      "fill_price": 12.970000267028809,
+      "fill_time": "2026-05-11",
+      "fill_mode": "open",
+      "trades": 7,
+      "max_dd": 0.014863583896190136
+    },
+    {
+      "date": "2026-05-11",
+      "symbol": "TQQQ",
+      "close": 76.95999908447266,
+      "equity": 10000,
+      "roi": 0,
+      "signal": 0.7994799908744503,
+      "target": 3.303128772959389e-7,
+      "order_usd": 0,
+      "trades": 0,
+      "max_dd": 0
+    },
+    {
+      "date": "2026-05-11",
+      "symbol": "MSTR",
+      "close": 195.94000244140625,
+      "equity": 10000,
+      "roi": 0,
+      "signal": 6.291149372778687,
+      "target": 4.8142677318497116e-24,
+      "order_usd": 0,
+      "trades": 0,
+      "max_dd": 0
+    },
+    {
+      "date": "2026-05-11",
+      "symbol": "TSLA",
+      "close": 445,
+      "equity": 11387.920476952877,
+      "roi": 0.13879204769528775,
+      "signal": -3.211495153125763,
+      "target": 0.9999999999997238,
+      "order_usd": 0,
+      "trades": 2,
+      "max_dd": 0.007999833304410342
+    },
+    {
+      "date": "2026-05-11",
+      "symbol": "CLSK",
+      "close": 14.300000190734863,
+      "equity": 11051.308106018601,
+      "roi": 0.10513081060186025,
+      "signal": -8.61371011055138,
+      "target": 0.8246114074883011,
+      "order_usd": 0,
+      "trades": 2,
+      "max_dd": 0.02992367032622789
+    },
+    {
+      "date": "2026-05-11",
+      "symbol": "TSLL",
+      "close": 16.834999084472656,
+      "equity": 12610.074047121865,
+      "roi": 0.2610074047121864,
+      "signal": -4.2966691461587905,
+      "target": 0.9999999999999993,
+      "order_usd": 0,
+      "trades": 4,
+      "max_dd": 0.002308598938977946
+    },
+    {
+      "date": "2026-05-11",
+      "symbol": "SOXX",
+      "close": 532.760009765625,
+      "equity": 10688.656307781042,
+      "roi": 0.06886563077810415,
+      "signal": 1.426521971048603,
+      "target": 5.146413183062128e-12,
+      "order_usd": 0,
+      "trades": 4,
+      "max_dd": 0.010383422144496945
+    },
+    {
+      "date": "2026-05-11",
+      "symbol": "LABU",
+      "close": 189.88999938964844,
+      "equity": 11001.664789221984,
+      "roi": 0.10016647892219854,
+      "signal": -1.6995724061167166,
+      "target": 0.9140614367228872,
+      "order_usd": 0,
+      "trades": 4,
+      "max_dd": 0.0008130239383082882
     }
   ],
   "summary": [
@@ -1083,23 +1206,23 @@
       "roi": 0,
       "max_dd": 0,
       "trade_count": 0,
-      "days_since_start": 7
+      "days_since_start": 10
     },
     {
       "symbol": "RIOT",
-      "equity": 12921.380694347845,
-      "roi": 0.2921380694347844,
+      "equity": 13589.541260883192,
+      "roi": 0.3589541260883191,
       "max_dd": 0.0012296969912792832,
       "trade_count": 2,
-      "days_since_start": 7
+      "days_since_start": 10
     },
     {
       "symbol": "MARA",
-      "equity": 10560.774842959681,
-      "roi": 0.05607748429596815,
+      "equity": 10916.509139105923,
+      "roi": 0.09165091391059232,
       "max_dd": 0.014863583896190136,
-      "trade_count": 6,
-      "days_since_start": 7
+      "trade_count": 7,
+      "days_since_start": 10
     },
     {
       "symbol": "TQQQ",
@@ -1107,7 +1230,7 @@
       "roi": 0,
       "max_dd": 0,
       "trade_count": 0,
-      "days_since_start": 7
+      "days_since_start": 10
     },
     {
       "symbol": "MSTR",
@@ -1115,31 +1238,31 @@
       "roi": 0,
       "max_dd": 0,
       "trade_count": 0,
-      "days_since_start": 7
+      "days_since_start": 10
     },
     {
       "symbol": "TSLA",
-      "equity": 10961.833271481157,
-      "roi": 0.09618332714811562,
+      "equity": 11387.920476952877,
+      "roi": 0.13879204769528775,
       "max_dd": 0.007999833304410342,
       "trade_count": 2,
-      "days_since_start": 7
+      "days_since_start": 10
     },
     {
       "symbol": "CLSK",
-      "equity": 10986.972144486012,
-      "roi": 0.09869721444860113,
+      "equity": 11051.308106018601,
+      "roi": 0.10513081060186025,
       "max_dd": 0.02992367032622789,
       "trade_count": 2,
-      "days_since_start": 7
+      "days_since_start": 10
     },
     {
       "symbol": "TSLL",
-      "equity": 11707.246452746978,
-      "roi": 0.17072464527469777,
+      "equity": 12610.074047121865,
+      "roi": 0.2610074047121864,
       "max_dd": 0.002308598938977946,
       "trade_count": 4,
-      "days_since_start": 7
+      "days_since_start": 10
     },
     {
       "symbol": "SOXX",
@@ -1147,15 +1270,15 @@
       "roi": 0.06886563077810415,
       "max_dd": 0.010383422144496945,
       "trade_count": 4,
-      "days_since_start": 7
+      "days_since_start": 10
     },
     {
       "symbol": "LABU",
-      "equity": 11001.668715178213,
-      "roi": 0.10016687151782144,
+      "equity": 11001.664789221984,
+      "roi": 0.10016647892219854,
       "max_dd": 0.0008130239383082882,
       "trade_count": 4,
-      "days_since_start": 7
+      "days_since_start": 10
     }
   ]
 }
