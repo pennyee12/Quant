@@ -40,7 +40,7 @@
 </head>
 <body>
   <h1>Quant Paper Trading</h1>
-  <p class="subtitle">Top 10 tickers · GA-evolved strategy · $10,000 per ticker · Signal on close · Fills at next open</p>
+  <p class="subtitle">5-ticker portfolio · GA-evolved strategy · $20,000 per ticker · Signal on close · Fills at next open</p>
   <p class="updated" id="updated">Loading…</p>
 
   <section>
@@ -79,7 +79,7 @@
   </section>
 
   <section>
-    <h2>Recent Activity (last 20 rows)</h2>
+    <h2>Recent Activity (last 50 rows)</h2>
     <table>
       <thead>
         <tr>
@@ -102,7 +102,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
-    const LEVERAGED = new Set(['SOXL','TQQQ','NVDL','BITX','TSLL','LABU']);
+    const LEVERAGED = new Set(['SOXL','LABU']);
     const COLORS = ['#3fb950','#58a6ff','#f78166','#d2a8ff','#ffa657','#79c0ff','#ff7b72','#56d364','#e3b341','#bc8cff'];
 
     function fmt(n, decimals=2) { return n == null ? '—' : n.toLocaleString('en-US', {minimumFractionDigits: decimals, maximumFractionDigits: decimals}); }
@@ -230,7 +230,7 @@
         });
 
         // Recent history
-        const recent = hist.slice(-20).reverse();
+        const recent = hist.slice(-50).reverse();
         document.getElementById('history-body').innerHTML = recent.map(r => {
           const inferredFillPrice = r.fill_price || (r.order_usd !== 0 ? r.close : 0);
           const fillShares = inferredFillPrice ? Math.abs(r.order_usd / inferredFillPrice) : 0;
