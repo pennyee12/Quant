@@ -30,10 +30,9 @@ import (
 	"github.com/pennyee12/Quant/internal/yahoo"
 )
 
-// Top-10 tickers for paper trading (profit-priority selection).
+// 5-ticker portfolio: one per sector, selected by avg annual strategy ROI.
 var paperTickers = []string{
-	"SOXL", "RIOT", "MARA", "TQQQ", "MSTR",
-	"TSLA", "CLSK", "TSLL", "SOXX", "LABU",
+	"RIOT", "SOXL", "LABU", "CHAT", "TAN",
 }
 
 func main() {

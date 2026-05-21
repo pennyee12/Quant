@@ -32,6 +32,7 @@ func main() {
 	startOverride := fs.String("start", "", "override backtest start date YYYY-MM-DD")
 	endOverride := fs.String("end", "", "override backtest end date YYYY-MM-DD")
 	yearly := fs.Bool("yearly", false, "write full-range per-year comparison to CSV")
+	simFrom := fs.String("sim-from", "", "run strategy from this date YYYY-MM-DD with 200-bar warmup (reports only from this date forward)")
 	trained := fs.Bool("trained", false, "use champion chromosomes from reports/champions/ if available")
 	tickersFlag := fs.String("tickers", "", "comma-separated list of tickers (default: all enabled)")
 	popSize := fs.Int("pop", 100, "GA population size")
@@ -50,7 +51,7 @@ func main() {
 
 	switch command {
 	case "compare", "backtest":
-		runCompare(cfg, client, *refresh, *startOverride, *endOverride, *yearly, *trained)
+		runCompare(cfg, client, *refresh, *startOverride, *endOverride, *yearly, *simFrom, *trained, *tickersFlag)
 	case "train":
 		runTrain(cfg, client, *tickersFlag, *popSize, *maxGens, *refresh)
 	case "account":
@@ -73,7 +74,7 @@ func commandAndArgs() (string, []string) {
 
 // ── compare ───────────────────────────────────────────────────────────────────
 
-func runCompare(cfg *config.Config, client *schwab.Client, refresh bool, startOverride, endOverride string, yearly, trained bool) {
+func runCompare(cfg *config.Config, client *schwab.Client, refresh bool, startOverride, endOverride string, yearly bool, simFrom string, trained bool, tickersFlag string) {
 	start, err := cfg.Backtest.StartTime()
 	if err != nil {
 		log.Fatal(err)
@@ -93,13 +94,41 @@ func runCompare(cfg *config.Config, client *schwab.Client, refresh bool, startOv
 		}
 	}
 
+	var simFromTime time.Time
+	if simFrom != "" {
+		if simFromTime, err = time.Parse("2006-01-02", simFrom); err != nil {
+			log.Fatalf("invalid -sim-from date: %v", err)
+		}
+	}
+
 	defaultParams := genome.Default.ToParams()
+
+	tickers := cfg.EnabledTickers()
+	if tickersFlag != "" {
+		want := map[string]bool{}
+		for _, s := range strings.Split(tickersFlag, ",") {
+			want[strings.TrimSpace(strings.ToUpper(s))] = true
+		}
+		filtered := tickers[:0]
+		for _, t := range tickers {
+			if want[t.Symbol] {
+				filtered = append(filtered, t)
+			}
+		}
+		tickers = filtered
+	}
 
 	var results []backtest.Result
 	var yearlyResults []backtest.Result
 
-	for _, ticker := range cfg.EnabledTickers() {
-		bars, err := loadBars(client, cfg, ticker.Symbol, start, end, refresh)
+	// Load all bars from the very beginning when using sim-from, to get warmup bars
+	loadStart := start
+	if !simFromTime.IsZero() {
+		loadStart = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+	}
+
+	for _, ticker := range tickers {
+		bars, err := loadBars(client, cfg, ticker.Symbol, loadStart, end, refresh)
 		if err != nil {
 			fmt.Printf("WARN %-5s %v\n", ticker.Symbol, err)
 			continue
@@ -123,8 +152,14 @@ func runCompare(cfg *config.Config, client *schwab.Client, refresh bool, startOv
 			FeeBPS:         cfg.Backtest.FeeBPS,
 			SlippageBPS:    cfg.Backtest.SlippageBPS,
 		}
-		res := backtest.Run(ticker.Symbol, bars, params, runCfg)
-		results = append(results, res)
+
+		if !simFromTime.IsZero() {
+			res := runFromDate(ticker.Symbol, bars, params, runCfg, simFromTime)
+			results = append(results, res)
+		} else {
+			res := backtest.Run(ticker.Symbol, bars, params, runCfg)
+			results = append(results, res)
+		}
 
 		if yearly {
 			yearlyResults = append(yearlyResults, runYearly(ticker.Symbol, bars, params, runCfg)...)
@@ -147,6 +182,34 @@ func runCompare(cfg *config.Config, client *schwab.Client, refresh bool, startOv
 		}
 		printYearlySummary(yearlyResults, path)
 	}
+}
+
+// runFromDate runs the strategy from simFrom using up to 200 prior bars as warmup.
+func runFromDate(symbol string, allBars []quant.Bar, params quant.StrategyParams, cfg backtest.RunConfig, simFrom time.Time) backtest.Result {
+	simFromMS := simFrom.UnixMilli()
+
+	// Find first bar on or after simFrom
+	startIdx := len(allBars)
+	for i, b := range allBars {
+		if b.TimeMS >= simFromMS {
+			startIdx = i
+			break
+		}
+	}
+	if startIdx >= len(allBars) {
+		return backtest.Result{Symbol: symbol}
+	}
+
+	const warmup = 200
+	warmupStart := startIdx - warmup
+	if warmupStart < 0 {
+		warmupStart = 0
+	}
+	combined := allBars[warmupStart:]
+	actualWarmup := startIdx - warmupStart
+
+	cfg.WarmupBars = actualWarmup
+	return backtest.Run(symbol, combined, params, cfg)
 }
 
 func runYearly(symbol string, bars []quant.Bar, params quant.StrategyParams, cfg backtest.RunConfig) []backtest.Result {
@@ -592,3 +655,4 @@ func maskAccount(v string) string {
 	}
 	return "****" + v[len(v)-4:]
 }
+

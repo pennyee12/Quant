@@ -1,11 +1,11 @@
 schwab:
-  token_file: "/Users/yip/Library/CloudStorage/Dropbox/Stock trading/data/token.json"
+  token_file: "/home/yip/data/schwab/token.json"
   api_base_url: "https://api.schwabapi.com"
   token_url: "https://api.schwabapi.com/v1/oauth/token"
-  credential_script: "/Users/yip/Projects/Stock Analysis 2/scripts/run_schwab_keepalive.sh"
+  credential_script: "/home/yip/scripts/run_schwab_keepalive.sh"
 
 backtest:
-  initial_capital: 10000
+  initial_capital: 20000
   monthly_inject: 0
   fee_bps: 1
   slippage_bps: 5
@@ -136,3 +136,30 @@ tickers:
     type: "Biotech 3x leveraged ETF"
     expense_ratio: 0.0100
     leverage: 3
+  - symbol: NLR
+    type: "Nuclear energy ETF"
+    expense_ratio: 0.0070
+  - symbol: GRID
+    type: "Smart grid infrastructure ETF"
+    expense_ratio: 0.0070
+  - symbol: ICLN
+    type: "Clean energy ETF"
+    expense_ratio: 0.0047
+  - symbol: AIQ
+    type: "AI & big data ETF"
+    expense_ratio: 0.0068
+  - symbol: CHAT
+    type: "Generative AI ETF"
+    expense_ratio: 0.0047
+  - symbol: BOTZ
+    type: "Robotics & AI ETF"
+    expense_ratio: 0.0068
+  - symbol: CIBR
+    type: "Cybersecurity ETF"
+    expense_ratio: 0.0060
+  - symbol: IBB
+    type: "iShares Biotech ETF"
+    expense_ratio: 0.0044
+  - symbol: BBH
+    type: "VanEck Biotech ETF"
+    expense_ratio: 0.0035

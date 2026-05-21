@@ -1,58 +1,30 @@
-# Alpaca Paper Trading API Setup
+# Alpaca Paper Trading Setup
 
-This project can use Alpaca later for paper/live order execution. For now, keep
-Alpaca in paper mode only.
+This document covers local setup and operation of `cmd/alpaca-paper`.
 
-## What To Create In Alpaca
+---
 
-In the Alpaca dashboard, use the **Paper Trading** account and generate paper API
-keys.
+## Alpaca Account
 
-You need two values:
+Paper account `PA319IDR95I7` is connected and verified:
+- Status: ACTIVE
+- Starting cash: $100,000 ($10,000 per ticker × 10 tickers)
+- Paper endpoint: `https://paper-api.alpaca.markets`
 
-- `API Key`
-- `Secret Key`
+**Security note:** Regenerate the paper API keys after the local workflow is validated —
+the keys were pasted into chat on 2026-05-01.
 
-Paper and live credentials are different. Do not use live keys while testing.
+---
 
-## Endpoints
+## Credentials
 
-Paper trading base URL:
-
-```text
-https://paper-api.alpaca.markets
-```
-
-Live trading base URL:
-
-```text
-https://api.alpaca.markets
-```
-
-Use paper until the system has been reviewed for real trading safety.
-
-## Required Headers
-
-Alpaca Trading API uses key headers, not Schwab-style OAuth refresh tokens:
-
-```text
-APCA-API-KEY-ID: your_key_id
-APCA-API-SECRET-KEY: your_secret_key
-```
-
-If you call `/v2/account` without those headers, Alpaca can return `403` or an
-auth error. The response header `X-Request-ID` is useful when contacting Alpaca
-support.
-
-## Local Setup
-
-Copy the example env file:
+Alpaca uses header-based auth (not OAuth). Create a local `.env` from the template:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and fill in your **paper** keys:
+Edit `.env` with your **paper** keys:
 
 ```bash
 ALPACA_API_KEY_ID=...
@@ -60,122 +32,152 @@ ALPACA_API_SECRET_KEY=...
 ALPACA_TRADING_BASE_URL=https://paper-api.alpaca.markets
 ```
 
-`.env` is ignored by git and must never be committed.
+`.env` is gitignored and must never be committed.
 
-## Smoke Test With Curl
+---
 
-After loading your env vars:
-
-```bash
-source .env
-
-curl -i \
-  -H "APCA-API-KEY-ID: $ALPACA_API_KEY_ID" \
-  -H "APCA-API-SECRET-KEY: $ALPACA_API_SECRET_KEY" \
-  "$ALPACA_TRADING_BASE_URL/v2/account"
-```
-
-Expected result:
-
-- HTTP `200`
-- JSON account details
-- response header `X-Request-ID: ...`
-
-If you get `401` or `403`:
-
-- confirm you used paper keys with `https://paper-api.alpaca.markets`
-- confirm there are no extra spaces/newlines in the key values
-- regenerate the paper keys if needed
-
-## Run The Top-10 Strategy Against Alpaca
-
-The repo has an Alpaca-backed top-10 runner:
+## Running
 
 ```bash
+# Dry run — safe to run anytime, no orders placed
 go run ./cmd/alpaca-paper -env .env
-```
 
-Default mode is **dry-run**. It:
-
-- reads your Alpaca paper account
-- reads existing Alpaca paper positions
-- fetches daily bars from Alpaca Market Data
-- loads trained champion genes from `reports/champions/{SYMBOL}.json`
-- prints the buy/sell/hold action the strategy would take
-- does **not** submit orders
-
-For the free/basic Alpaca market-data plan, use the IEX feed:
-
-```bash
-go run ./cmd/alpaca-paper -env .env -feed iex
-```
-
-To test a small subset:
-
-```bash
+# Subset of tickers only
 go run ./cmd/alpaca-paper -env .env -tickers TSLA,RIOT
-```
 
-To submit Alpaca paper orders, you must explicitly add `-execute`:
-
-```bash
+# Execute paper orders to Alpaca
 go run ./cmd/alpaca-paper -env .env -execute
+
+# Force re-run if today's date is already recorded in state
+go run ./cmd/alpaca-paper -env .env -execute -force
 ```
 
-Do not use `-execute` until you are comfortable with the dry-run output.
+---
 
-Current behavior:
-
-- It uses a virtual allocation of `$10,000` per ticker by default.
-- It uses actual Alpaca paper position shares if they already exist.
-- Buy orders are submitted as market notional orders.
-- Sell orders are submitted as market quantity orders.
-- Orders submitted after market close are expected to queue/execute according
-  to Alpaca paper-trading rules.
-- Each Alpaca response may include `X-Request-ID`; keep it for support/debugging.
-
-Useful flags:
+## All Flags
 
 ```text
--allocation 10000       virtual strategy allocation per ticker
--tickers TSLA,RIOT      only run selected tickers
--feed iex               data feed; use iex for free/basic plan
--execute                actually submit paper orders
+-env .env              local env file for Alpaca credentials (default: .env)
+-execute               submit paper orders; default is dry-run
+-force                 bypass duplicate-date guard
+-allow-non-trading-day run even when today is not a regular NYSE trading day
+-save-dry-run          persist dry-run decisions; default dry runs are read-only
+-state alpaca_state.json  local run-state file (default: alpaca_state.json)
+-tickers TSLA,RIOT     run subset of tickers; default: top 10
+-feed iex              Alpaca data feed: iex (free) or sip (paid)
+-allocation 10000      initial capital per ticker — used only on first run for each ticker
+-warmup 200            warmup bars for indicator seeding
+-config config.yaml    config file
 ```
 
-## GitHub Actions Setup
+---
 
-When GitHub Actions needs to talk to Alpaca, put keys in GitHub repository
-secrets:
+## How It Works
 
-- `ALPACA_API_KEY_ID`
-- `ALPACA_API_SECRET_KEY`
-- `ALPACA_TRADING_BASE_URL`
+1. Loads Alpaca credentials from `.env`
+2. Checks account is not blocked
+3. Loads per-ticker state from `alpaca_state.json` (creates fresh if missing)
+4. Trading-day guard: checks Alpaca's market calendar and exits when today is not a trading day
+5. Duplicate-date guard: exits if today already ran (bypass with `-force`)
+6. For each ticker:
+   - Reconciles actual shares from Alpaca (source of truth)
+   - Updates equity/ROI/drawdown from latest price
+   - Fetches ~200 days of bars from Alpaca IEX feed
+   - Loads champion chromosome from `reports/champions/{SYMBOL}.json`
+   - Runs `strategy.Step()` to get signal and order size
+   - In dry-run: prints intended action without saving state unless `-save-dry-run` is set
+   - In execute mode: submits market order to Alpaca, records transaction
+7. In execute mode, checks open Alpaca orders first and skips symbols that already have an open order
+8. Prints per-ticker summary and account total
+9. Saves state to `alpaca_state.json`
 
-Use:
+**Order timing:** Orders submitted at 4:15 PM ET are held by Alpaca and fill at
+the next morning's market open automatically. No morning run needed.
+
+---
+
+## Per-Ticker State (alpaca_state.json)
+
+Each ticker tracks independently — cash never crosses between tickers:
+
+```json
+{
+  "symbol": "RIOT",
+  "initial_capital": 10000,
+  "cash": 5075.81,
+  "shares": 266.17,
+  "avg_entry_price": 18.50,
+  "last_price": 18.50,
+  "equity": 10000.00,
+  "peak_equity": 10000.00,
+  "max_drawdown": 0.0,
+  "roi": 0.0,
+  "trade_count": 1,
+  "transactions": [...]
+}
+```
+
+`alpaca_state.json` is gitignored and stays local.
+
+---
+
+## Automatic Schedule (systemd)
+
+The app runs automatically via systemd on Linux. Unit files are in `deploy/digitalocean/`:
+
+- **Service**: `quant-alpaca-paper.service`
+- **Timer**: `quant-alpaca-paper.timer` — Mon–Fri at 4:15 PM ET
+- The app uses the `America/New_York` timezone internally, so daylight saving is handled correctly
+
+Check logs after each run:
+```bash
+journalctl -u quant-alpaca-paper.service -n 100 --no-pager
+```
+
+Check timer status:
+```bash
+systemctl list-timers quant-alpaca-paper.timer
+```
+
+To reload after editing unit files:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart quant-alpaca-paper.timer
+```
+
+See `deploy/digitalocean/README.md` for full installation instructions.
+
+---
+
+## Safety Rules
+
+- Paper endpoint is enforced in code — will fatal if URL doesn't contain "paper" when `-execute` is set
+- Execute mode checks existing open Alpaca orders and skips affected symbols to avoid duplicate orders
+- Sell qty is capped at shares owned — no shorting
+- Cash per ticker never goes negative — buy notional capped at available cash
+- All decisions and submitted orders are logged to `alpaca_state.json` with Alpaca request IDs
+
+---
+
+## DigitalOcean Deployment
+
+Cloud deployment files live in:
 
 ```text
-ALPACA_TRADING_BASE_URL=https://paper-api.alpaca.markets
+deploy/digitalocean/
 ```
 
-Do not put Alpaca secrets in `config.yaml`, `docs/data.json`, or
-`paper_state.json`.
+Follow `deploy/digitalocean/README.md` to build the Linux binary, copy the minimal package,
+install the systemd service/timer, and run automatically at 4:15 PM Eastern on the droplet.
 
-Future cloud/GitHub command, once secrets are configured:
+---
+
+## Smoke Test
 
 ```bash
-go run ./cmd/alpaca-paper -execute
+# Verify account connection
+go run ./cmd/alpaca-paper -env .env -tickers TSLA
+
+# Run all tests
+go test ./...
 ```
-
-For the first cloud version, keep it in dry-run mode until logs look correct.
-
-## Safety Rule
-
-Before any real trading:
-
-- review order sizing
-- add a max daily loss kill switch
-- add a max order value limit
-- add market-hours checks
-- log `X-Request-ID` for every submitted order
-- keep live keys completely separate from paper keys

@@ -71,6 +71,12 @@ type Order struct {
 	CreatedAt     string `json:"created_at"`
 }
 
+type CalendarDay struct {
+	Date  string `json:"date"`
+	Open  string `json:"open"`
+	Close string `json:"close"`
+}
+
 func NewFromEnv(envPath string) (*Client, error) {
 	if envPath != "" {
 		_ = LoadDotEnv(envPath)
@@ -143,6 +149,25 @@ func (c *Client) GetPositions() ([]Position, string, error) {
 	return out, requestID, err
 }
 
+func (c *Client) GetCalendar(startDate, endDate string) ([]CalendarDay, string, error) {
+	u, err := url.Parse(c.TradingBaseURL + "/v2/calendar")
+	if err != nil {
+		return nil, "", err
+	}
+	q := u.Query()
+	q.Set("start", startDate)
+	q.Set("end", endDate)
+	u.RawQuery = q.Encode()
+
+	var out []CalendarDay
+	req, err := c.newRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, "", err
+	}
+	requestID, err := c.doJSON(req, &out)
+	return out, requestID, err
+}
+
 func (c *Client) FetchDailyBars(symbol string, start, end time.Time, feed string) ([]quant.Bar, string, error) {
 	if feed == "" {
 		feed = "iex"
@@ -196,6 +221,34 @@ func (c *Client) FetchDailyBars(symbol string, start, end time.Time, feed string
 		})
 	}
 	return bars, requestID, nil
+}
+
+func (c *Client) GetOpenOrders() ([]Order, string, error) {
+	var out []Order
+	req, err := c.newRequest(http.MethodGet, c.TradingBaseURL+"/v2/orders?status=open", nil)
+	if err != nil {
+		return nil, "", err
+	}
+	requestID, err := c.doJSON(req, &out)
+	return out, requestID, err
+}
+
+func (c *Client) CancelOrder(orderID string) (string, error) {
+	req, err := c.newRequest(http.MethodDelete, c.TradingBaseURL+"/v2/orders/"+orderID, nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := c.HTTP.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	requestID := resp.Header.Get("X-Request-ID")
+	if resp.StatusCode != 204 {
+		raw, _ := io.ReadAll(resp.Body)
+		return requestID, fmt.Errorf("cancel order %s failed: HTTP %d body=%s", orderID, resp.StatusCode, string(raw))
+	}
+	return requestID, nil
 }
 
 func (c *Client) SubmitMarketNotional(symbol, side string, notional float64) (Order, string, error) {
