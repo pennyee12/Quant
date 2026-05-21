@@ -239,7 +239,7 @@
         });
 
         // Recent history
-        const recent = [...hist].reverse();
+        const recent = [...hist].filter(r => r.order_usd !== 0).reverse();
         document.getElementById('history-body').innerHTML = recent.map(r => {
           const inferredFillPrice = r.fill_price || (r.order_usd !== 0 ? r.close : 0);
           const fillShares = inferredFillPrice ? Math.abs(r.order_usd / inferredFillPrice) : 0;
