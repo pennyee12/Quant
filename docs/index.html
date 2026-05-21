@@ -79,7 +79,7 @@
   </section>
 
   <section>
-    <h2>Recent Activity (last 50 rows)</h2>
+    <h2>All Activity</h2>
     <table>
       <thead>
         <tr>
@@ -103,6 +103,13 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
     const LEVERAGED = new Set(['SOXL','LABU']);
+    const DESCRIPTIONS = {
+      'RIOT': 'Bitcoin miner stock',
+      'SOXL': '3× Semiconductor ETF',
+      'LABU': '3× Biotech ETF',
+      'CHAT': 'Generative AI ETF',
+      'TAN':  'Solar energy ETF',
+    };
     const COLORS = ['#3fb950','#58a6ff','#f78166','#d2a8ff','#ffa657','#79c0ff','#ff7b72','#56d364','#e3b341','#bc8cff'];
 
     function fmt(n, decimals=2) { return n == null ? '—' : n.toLocaleString('en-US', {minimumFractionDigits: decimals, maximumFractionDigits: decimals}); }
@@ -151,8 +158,10 @@
             const roiClass = p.roi > 0 ? 'pos' : p.roi < 0 ? 'neg' : 'neu';
             const stockValue = (p.shares || 0) * (p.last_price || 0);
             const pending = p.pending_order_usd || 0;
+            const desc = DESCRIPTIONS[p.symbol] || '';
             return `<div class="card">
               <div class="card-symbol">${lev}${p.symbol}</div>
+              ${desc ? `<div style="font-size:0.78rem;color:#8b949e;margin-bottom:4px">${desc}</div>` : ''}
               <div class="card-equity ${roiClass}">${money(p.equity)}</div>
               <div class="card-row"><span>Shares owned</span><span>${fmt(p.shares, 4)}</span></div>
               <div class="card-row"><span>Money in stock</span><span>${money(stockValue)}</span></div>
@@ -176,7 +185,7 @@
           const stockValue = (p.shares || 0) * (p.last_price || 0);
           const pending = p.pending_order_usd || 0;
           return `<tr>
-          <td>${LEVERAGED.has(s.symbol)?'<span class="badge badge-lev">3x</span> ':''}${s.symbol}</td>
+          <td>${LEVERAGED.has(s.symbol)?'<span class="badge badge-lev">3x</span> ':''}${s.symbol}<br><span style="font-size:0.72rem;color:#8b949e;font-weight:400">${DESCRIPTIONS[s.symbol]||''}</span></td>
           <td>${fmt(p.shares || 0, 4)}</td>
           <td>${money(stockValue)}</td>
           <td>${money(p.cash || 0)}</td>
@@ -230,7 +239,7 @@
         });
 
         // Recent history
-        const recent = hist.slice(-50).reverse();
+        const recent = [...hist].reverse();
         document.getElementById('history-body').innerHTML = recent.map(r => {
           const inferredFillPrice = r.fill_price || (r.order_usd !== 0 ? r.close : 0);
           const fillShares = inferredFillPrice ? Math.abs(r.order_usd / inferredFillPrice) : 0;
