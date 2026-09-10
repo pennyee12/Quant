@@ -1,85 +1,85 @@
 {
-  "updated_at": "2026-09-09",
+  "updated_at": "2026-09-10",
   "positions": [
     {
       "symbol": "RIOT",
       "shares": 1118.9901081593139,
       "cash": 275.7742341866833,
       "initial_capital": 20000,
-      "last_price": 22.06999969482422,
-      "equity": 24971.88557977406,
-      "roi": 0.248594278988703,
+      "last_price": 20.950000762939453,
+      "equity": 23718.61785384601,
+      "roi": 0.18593089269230068,
       "trade_count": 10,
-      "bars_since_trade": 3,
+      "bars_since_trade": 4,
       "peak_equity": 30722.33835714063,
       "max_drawdown": 0.2435982360767205,
       "started_at": "2026-05-01T00:00:00Z",
-      "updated_at": "2026-09-09T22:19:51.614401764Z",
-      "pending_order_usd": 0
+      "updated_at": "2026-09-10T22:18:59.757429732Z",
+      "pending_order_usd": -11679.494921608864
     },
     {
       "symbol": "SOXL",
-      "shares": 2.167773286778352,
+      "shares": 2.1677087697162456,
       "cash": 11680.226549499552,
       "initial_capital": 20000,
-      "last_price": 125.87000274658203,
-      "equity": 11953.08417906031,
-      "roi": -0.40234579104698454,
+      "last_price": 115.76000213623047,
+      "equity": 11931.16052131263,
+      "roi": -0.40344197393436854,
       "trade_count": 41,
       "bars_since_trade": 1,
       "peak_equity": 27180.527660062926,
       "max_drawdown": 0.6458351865802032,
       "started_at": "2026-05-01T00:00:00Z",
-      "updated_at": "2026-09-09T22:19:51.70117068Z",
-      "pending_order_usd": 0
+      "updated_at": "2026-09-10T22:18:59.836867721Z",
+      "pending_order_usd": 7158.696312787578
     },
     {
       "symbol": "LABU",
-      "shares": 79.71763987074166,
+      "shares": 79.7144764723341,
       "cash": 2169.809671054536,
       "initial_capital": 20000,
-      "last_price": 279.0199890136719,
-      "equity": 24412.624671984726,
-      "roi": 0.2206312335992362,
+      "last_price": 266,
+      "equity": 23373.860412695405,
+      "roi": 0.16869302063477032,
       "trade_count": 38,
       "bars_since_trade": 1,
       "peak_equity": 26052.05350274381,
       "max_drawdown": 0.11468623450624171,
       "started_at": "2026-05-01T00:00:00Z",
-      "updated_at": "2026-09-09T22:19:51.774444063Z",
+      "updated_at": "2026-09-10T22:18:59.907738985Z",
       "pending_order_usd": 0
     },
     {
       "symbol": "CHAT",
-      "shares": 237.87290884820277,
+      "shares": 237.8684723296647,
       "cash": 741.7986565624751,
       "initial_capital": 20000,
-      "last_price": 90.69000244140625,
-      "equity": 22314.49334075039,
-      "roi": 0.11572466703751938,
+      "last_price": 87.97000122070312,
+      "equity": 21667.088457769867,
+      "roi": 0.08335442288849326,
       "trade_count": 6,
       "bars_since_trade": 4,
       "peak_equity": 25670.829304869552,
       "max_drawdown": 0.2837277332940328,
       "started_at": "2026-05-01T00:00:00Z",
-      "updated_at": "2026-09-09T22:19:51.838839589Z",
+      "updated_at": "2026-09-10T22:18:59.974805459Z",
       "pending_order_usd": 0
     },
     {
       "symbol": "TAN",
-      "shares": 0.024243268111637448,
+      "shares": 0.024242594687523236,
       "cash": 17507.75519847744,
       "initial_capital": 20000,
-      "last_price": 47.7400016784668,
-      "equity": 17508.912572137782,
-      "roi": -0.12455437139311087,
+      "last_price": 47.040000915527344,
+      "equity": 17508.895570153734,
+      "roi": -0.12455522149231324,
       "trade_count": 12,
       "bars_since_trade": 6,
       "peak_equity": 20980.325523601587,
       "max_drawdown": 0.24422792352191858,
       "started_at": "2026-05-01T00:00:00Z",
-      "updated_at": "2026-09-09T22:19:51.918549473Z",
-      "pending_order_usd": 0
+      "updated_at": "2026-09-10T22:19:00.058639775Z",
+      "pending_order_usd": 6505.990860822558
     }
   ],
   "history": [
@@ -6043,48 +6043,108 @@
       "order_usd": 0,
       "trades": 12,
       "max_dd": 0.24422792352191858
+    },
+    {
+      "date": "2026-09-10",
+      "symbol": "RIOT",
+      "close": 20.950000762939453,
+      "equity": 23718.61785384601,
+      "roi": 0.18593089269230068,
+      "signal": 3.826938730782818,
+      "target": 4.146375910844695e-7,
+      "order_usd": 0,
+      "trades": 10,
+      "max_dd": 0.2435982360767205
+    },
+    {
+      "date": "2026-09-10",
+      "symbol": "SOXL",
+      "close": 115.76000213623047,
+      "equity": 11931.16052131263,
+      "roi": -0.40344197393436854,
+      "signal": -1.2877381090313398,
+      "target": 0.9999980332519586,
+      "order_usd": 0,
+      "trades": 41,
+      "max_dd": 0.6458351865802032
+    },
+    {
+      "date": "2026-09-10",
+      "symbol": "LABU",
+      "close": 266,
+      "equity": 23373.860412695405,
+      "roi": 0.16869302063477032,
+      "signal": -45.17331344616555,
+      "target": 0.9140614367228872,
+      "order_usd": 0,
+      "trades": 38,
+      "max_dd": 0.11468623450624171
+    },
+    {
+      "date": "2026-09-10",
+      "symbol": "CHAT",
+      "close": 87.97000122070312,
+      "equity": 21667.088457769867,
+      "roi": 0.08335442288849326,
+      "signal": -7.829999158537703,
+      "target": 1,
+      "order_usd": 0,
+      "trades": 6,
+      "max_dd": 0.2837277332940328
+    },
+    {
+      "date": "2026-09-10",
+      "symbol": "TAN",
+      "close": 47.040000915527344,
+      "equity": 17508.895570153734,
+      "roi": -0.12455522149231324,
+      "signal": -0.6889045580215549,
+      "target": 0.9976524912858755,
+      "order_usd": 0,
+      "trades": 12,
+      "max_dd": 0.24422792352191858
     }
   ],
   "summary": [
     {
       "symbol": "RIOT",
-      "equity": 24971.88557977406,
-      "roi": 0.248594278988703,
+      "equity": 23718.61785384601,
+      "roi": 0.18593089269230068,
       "max_dd": 0.2435982360767205,
       "trade_count": 10,
-      "days_since_start": 131
+      "days_since_start": 132
     },
     {
       "symbol": "SOXL",
-      "equity": 11953.08417906031,
-      "roi": -0.40234579104698454,
+      "equity": 11931.16052131263,
+      "roi": -0.40344197393436854,
       "max_dd": 0.6458351865802032,
       "trade_count": 41,
-      "days_since_start": 131
+      "days_since_start": 132
     },
     {
       "symbol": "LABU",
-      "equity": 24412.624671984726,
-      "roi": 0.2206312335992362,
+      "equity": 23373.860412695405,
+      "roi": 0.16869302063477032,
       "max_dd": 0.11468623450624171,
       "trade_count": 38,
-      "days_since_start": 131
+      "days_since_start": 132
     },
     {
       "symbol": "CHAT",
-      "equity": 22314.49334075039,
-      "roi": 0.11572466703751938,
+      "equity": 21667.088457769867,
+      "roi": 0.08335442288849326,
       "max_dd": 0.2837277332940328,
       "trade_count": 6,
-      "days_since_start": 131
+      "days_since_start": 132
     },
     {
       "symbol": "TAN",
-      "equity": 17508.912572137782,
-      "roi": -0.12455437139311087,
+      "equity": 17508.895570153734,
+      "roi": -0.12455522149231324,
       "max_dd": 0.24422792352191858,
       "trade_count": 12,
-      "days_since_start": 131
+      "days_since_start": 132
     }
   ]
 }
